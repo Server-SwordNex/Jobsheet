@@ -1,0 +1,26 @@
+:root {
+  /* Palette base */
+  --accent: #F20519;
+  --accent-hover: #D9041B;
+  --accent-light: #F25C69;
+  --accent-soft: #FFF5F5;
+  --accent-warm: #F59E0B;
+  --dark: #1E1B4B;
+  --light: #FFFFFF;
+  --success: #10B981;
+
+  /* RGB components for rgba() */
+  --dark-rgb: 30, 27, 75;
+  --accent-rgb: 242, 5, 25;
+  --accent-hover-rgb: 217, 4, 27;
+  --accent-light-rgb: 242, 92, 105;
+  --accent-warm-rgb: 245, 158, 11;
+  --light-rgb: 255, 255, 255;
+  --success-rgb: 16, 185, 129;
+
+  /* Glassmorphism */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.25);
+  --glass-shadow: 0 8px 32px rgba(30, 27, 75, 0.06);
+  --glass-blur: 20px;
+}

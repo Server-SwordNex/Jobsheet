@@ -1,0 +1,182 @@
+.container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0 0 2px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: rgba(var(--dark-rgb), 0.5);
+  margin: 0;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: rgba(var(--dark-rgb), 0.3);
+}
+
+.emptyIcon {
+  opacity: 0.4;
+}
+
+.emptyText {
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(var(--dark-rgb), 0.4);
+  margin: 0;
+}
+
+.createBtn {
+  padding: 8px 18px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: var(--light);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.createBtn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  flex: 1;
+  align-content: start;
+}
+
+.tile {
+  background: var(--light);
+  border: 1px solid rgba(var(--dark-rgb), 0.08);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.tile:hover {
+  border-color: rgba(var(--accent-rgb), 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.tileHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.06);
+  margin-bottom: 10px;
+}
+
+.tileJobNo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.tileDate {
+  font-size: 11px;
+  color: rgba(var(--dark-rgb), 0.4);
+  font-weight: 500;
+}
+
+.tileBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.tileRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tileLabel {
+  font-size: 12px;
+  color: rgba(var(--dark-rgb), 0.45);
+  font-weight: 500;
+  min-width: 60px;
+  flex-shrink: 0;
+}
+
+.tileValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tileFooter {
+  display: flex;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(var(--dark-rgb), 0.06);
+}
+
+.loadBtn {
+  flex: 1;
+  padding: 7px 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  color: var(--light);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.loadBtn:hover {
+  background: var(--accent-hover);
+}
+
+.deleteBtn {
+  padding: 7px 12px;
+  background: transparent;
+  border: 1px solid rgba(var(--dark-rgb), 0.15);
+  border-radius: 6px;
+  color: rgba(var(--dark-rgb), 0.5);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deleteBtn:hover {
+  background: rgba(var(--accent-rgb), 0.06);
+  border-color: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent);
+}

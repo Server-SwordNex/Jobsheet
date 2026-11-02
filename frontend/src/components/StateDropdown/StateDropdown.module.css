@@ -1,0 +1,50 @@
+.wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.select {
+  width: 100%;
+  padding: 12px 32px 12px 12px;
+  background: rgba(var(--dark-rgb), 0.04);
+  border: 1px solid rgba(var(--dark-rgb), 0.08);
+  border-radius: 10px;
+  color: var(--dark);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.select:hover {
+  background: rgba(var(--dark-rgb), 0.06);
+  border-color: rgba(var(--dark-rgb), 0.12);
+}
+
+.select:focus {
+  background: rgba(var(--accent-rgb), 0.06);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.12);
+}
+
+.select option {
+  background: var(--light);
+  color: var(--dark);
+}
+
+.chevron {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(var(--dark-rgb), 0.5);
+  pointer-events: none;
+}
+
+
+

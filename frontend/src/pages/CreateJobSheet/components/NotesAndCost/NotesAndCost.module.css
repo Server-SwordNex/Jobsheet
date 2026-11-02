@@ -1,0 +1,123 @@
+.section {
+  background: var(--light);
+  border: 1px solid rgba(var(--dark-rgb), 0.08);
+  border-radius: 10px;
+  padding: 16px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0 0 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.06);
+  flex-shrink: 0;
+}
+
+.breakdownBody {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.row:hover {
+  background: rgba(var(--dark-rgb), 0.03);
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(var(--dark-rgb), 0.6);
+}
+
+.value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.inputGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.currency {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(var(--dark-rgb), 0.4);
+}
+
+.input {
+  width: 110px;
+  padding: 6px 10px;
+  background: rgba(var(--dark-rgb), 0.04);
+  border: 1px solid rgba(var(--dark-rgb), 0.1);
+  border-radius: 6px;
+  color: var(--dark);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+  text-align: right;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+}
+
+.input::-webkit-outer-spin-button,
+.input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.input:hover {
+  background: rgba(var(--dark-rgb), 0.06);
+  border-color: rgba(var(--dark-rgb), 0.15);
+}
+
+.input:focus {
+  background: rgba(var(--accent-rgb), 0.04);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1);
+}
+
+.totalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  margin-top: 10px;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.08), rgba(var(--accent-hover-rgb), 0.05));
+  border: 1px solid rgba(var(--accent-rgb), 0.12);
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.totalLabel {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.totalValue {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: -0.3px;
+}

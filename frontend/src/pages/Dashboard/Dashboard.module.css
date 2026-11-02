@@ -1,0 +1,394 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.heading {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: rgba(var(--dark-rgb), 0.5);
+  margin: 0;
+}
+
+/* ─── Stat Cards ─── */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: #fff;
+  border: 1px solid rgba(var(--dark-rgb), 0.06);
+  border-radius: 10px;
+  padding: 10px 6px;
+  box-shadow: 0 1px 4px rgba(var(--dark-rgb), 0.04);
+  text-align: center;
+}
+
+.statIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.statIcon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.statValue {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statLabel {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(var(--dark-rgb), 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Two Column ─── */
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 800px) {
+  .twoCol { grid-template-columns: 1fr; }
+}
+
+/* ─── Cards ─── */
+
+.card {
+  background: #fff;
+  border: 1px solid rgba(var(--dark-rgb), 0.06);
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(var(--dark-rgb), 0.04);
+  overflow: hidden;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dark);
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.06);
+}
+
+.cardHeader svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.cardBody {
+  padding: 16px 18px;
+}
+
+/* ─── Status List ─── */
+
+.statusList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.statusDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusName {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--dark);
+  min-width: 80px;
+  text-transform: capitalize;
+}
+
+.statusBarWrap {
+  flex: 1;
+  height: 6px;
+  background: rgba(var(--dark-rgb), 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.statusBar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.statusCount {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dark);
+  min-width: 24px;
+  text-align: right;
+}
+
+/* ─── Recent List ─── */
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recentRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.03);
+}
+
+.recentRow:last-child {
+  border-bottom: none;
+}
+
+.recentJobNo {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 90px;
+}
+
+.recentCustomer {
+  font-size: 12px;
+  color: var(--dark);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recentStatus {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  flex-shrink: 0;
+}
+
+.recentDate {
+  font-size: 11px;
+  color: rgba(var(--dark-rgb), 0.45);
+  flex-shrink: 0;
+}
+
+/* ─── Plan ─── */
+
+.planGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.planStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  background: rgba(var(--dark-rgb), 0.02);
+  border-radius: 8px;
+}
+
+.planValue {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--dark);
+}
+
+.planLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(var(--dark-rgb), 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Bar Chart ─── */
+
+/* ─── Bar Chart ─── */
+
+.barChart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  height: 220px;
+  padding: 4px 0;
+}
+
+.barCol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.barVal {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.barTrack {
+  width: 100%;
+  max-width: 50px;
+  height: 160px;
+  background: rgba(var(--dark-rgb), 0.04);
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.barFill {
+  width: 100%;
+  background: var(--accent);
+  border-radius: 4px;
+  transition: height 0.5s ease;
+  min-height: 2px;
+}
+
+.barLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(var(--dark-rgb), 0.7);
+  text-transform: uppercase;
+}
+
+/* ─── Pie Chart ─── */
+
+.pieWrap {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.pieWrap svg {
+  flex-shrink: 0;
+}
+
+.pieLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pieSlice {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.pieLegendRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.pieDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pieLegendLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dark);
+  text-transform: capitalize;
+  min-width: 70px;
+}
+
+.pieLegendCount {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+/* ─── Empty ─── */
+
+.emptyText {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(var(--dark-rgb), 0.3);
+  margin: 16px 0;
+}
+
+.emptyState {
+  text-align: center;
+  font-size: 15px;
+  color: rgba(var(--dark-rgb), 0.4);
+  margin-top: 48px;
+}
+
+.emptyDashboard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: rgba(var(--dark-rgb), 0.3);
+}
+
+.emptyDashboard h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 16px 0 6px;
+}
+
+.emptyDashboard p {
+  font-size: 14px;
+  color: rgba(var(--dark-rgb), 0.45);
+  margin: 0;
+}

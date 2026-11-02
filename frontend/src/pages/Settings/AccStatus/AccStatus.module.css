@@ -1,0 +1,110 @@
+.accountSection {
+  margin-top: 30px;
+
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #c0bdbd;
+  padding: 50px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.accountSection:hover {
+  box-shadow: 0 0 10px #666565;
+}
+
+.header {
+  margin-bottom: 20px;
+}
+
+.subText {
+  color: #666;
+  font-size: 14px;
+}
+
+.card {
+  border: 1px solid #eee;
+  border-radius: 12px;
+
+  padding: 20px;
+
+  background: #fafafa;
+}
+
+.statusGrid {
+  display: grid;
+
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(220px, 1fr)
+  );
+
+  gap: 20px;
+}
+
+.statusBlock {
+  display: flex;
+  flex-direction: column;
+}
+
+.statusBlock label {
+  font-size: 12px;
+  font-weight: 600;
+
+  color: #777;
+
+  margin-bottom: 6px;
+}
+
+.value {
+  font-size: 16px;
+  font-weight: 600;
+
+  color: #333;
+}
+
+.statusBadge {
+  display: inline-block;
+
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  width: fit-content;
+}
+
+.pending {
+  background: #fff7ed;
+  color: #f97316;
+
+  border: 1px solid #fed7aa;
+}
+
+.verified {
+  background: #ecfdf5;
+  color: #059669;
+
+  border: 1px solid #a7f3d0;
+}
+
+.subuserIcon {
+  width: 45px;
+  height: 45px;
+  background: #fde273;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+
+/* Responsive */
+
+@media (max-width: 600px) {
+  .statusGrid {
+    gap: 14px;
+  }
+}

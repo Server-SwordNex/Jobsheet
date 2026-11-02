@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "swordnex-softwares"
+  },
+  "targets": {
+    "swordnex-softwares": {
+      "hosting": {
+        "swordNexJobsheetTarget": [
+          "swordnex-jobsheet"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

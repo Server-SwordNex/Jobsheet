@@ -1,0 +1,381 @@
+.container {
+  width: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.heading {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0 0 4px;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: rgba(var(--dark-rgb), 0.55);
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--light);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.addBtn:hover {
+  background: var(--accent-hover);
+}
+
+.planList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.planCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 20px;
+  border: 1px solid rgba(var(--dark-rgb), 0.08);
+  border-radius: 12px;
+  background: var(--light);
+}
+
+.planCardTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.planActions {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(var(--dark-rgb), 0.04);
+  color: rgba(var(--dark-rgb), 0.45);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.actionBtn:hover {
+  background: rgba(var(--dark-rgb), 0.08);
+  color: var(--dark);
+}
+
+.deleteBtn:hover {
+  background: rgba(var(--accent-rgb), 0.08);
+  color: var(--accent);
+}
+
+.actionBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.planName {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0;
+}
+
+.popularBadge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(var(--accent-rgb), 0.1);
+  color: var(--accent);
+}
+
+.planBilling {
+  font-size: 13px;
+  color: rgba(var(--dark-rgb), 0.5);
+  text-transform: capitalize;
+}
+
+.planPrice {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 4px 0 0;
+}
+
+.planTagLine {
+  font-size: 13px;
+  color: rgba(var(--dark-rgb), 0.55);
+  margin-top: 2px;
+}
+
+.submitBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  width: 560px;
+  max-width: 94vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(30, 27, 75, 0.1);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--dark);
+  margin: 0;
+}
+
+.closeBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(var(--dark-rgb), 0.04);
+  color: rgba(var(--dark-rgb), 0.5);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.closeBtn:hover {
+  background: rgba(var(--dark-rgb), 0.08);
+  color: var(--dark);
+}
+
+.form {
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formRow {
+  display: flex;
+  gap: 16px;
+}
+
+.formRow > .field {
+  flex: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(var(--dark-rgb), 0.7);
+}
+
+.input {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(var(--dark-rgb), 0.12);
+  border-radius: 8px;
+  background: var(--light);
+  color: var(--dark);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.textarea {
+  padding: 10px 12px;
+  border: 1px solid rgba(var(--dark-rgb), 0.12);
+  border-radius: 8px;
+  background: var(--light);
+  color: var(--dark);
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.textarea:focus {
+  border-color: var(--accent);
+}
+
+.checkLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(var(--dark-rgb), 0.7);
+  cursor: pointer;
+  padding-top: 24px;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.cancelBtn {
+  padding: 9px 20px;
+  border: 1px solid rgba(var(--dark-rgb), 0.12);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(var(--dark-rgb), 0.6);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cancelBtn:hover {
+  background: rgba(var(--dark-rgb), 0.04);
+  color: var(--dark);
+}
+
+.submitBtn {
+  padding: 9px 24px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--light);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.submitBtn:hover {
+  background: var(--accent-hover);
+}
+
+.subUserPriceSection {
+  background: var(--light);
+  border: 1px solid rgba(var(--dark-rgb), 0.08);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+}
+
+.subUserPriceRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.subUserPriceRow strong {
+  font-size: 15px;
+  color: var(--dark);
+}
+
+.subUserPriceRow p {
+  font-size: 13px;
+  color: rgba(var(--dark-rgb), 0.55);
+  margin: 2px 0 0;
+}
+
+.subUserPriceRow > div {
+  flex: 1;
+}
+
+.priceInput {
+  width: 120px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid rgba(var(--dark-rgb), 0.12);
+  border-radius: 8px;
+  background: var(--light);
+  color: var(--dark);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.priceInput:focus {
+  border-color: var(--accent);
+}
+
+.savePriceBtn {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--light);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.savePriceBtn:hover {
+  background: var(--accent-hover);
+}
+
+.savePriceBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

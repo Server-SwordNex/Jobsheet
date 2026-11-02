@@ -1,0 +1,124 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--light);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  padding: 0 32px;
+  flex-shrink: 0;
+  background: var(--light);
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.08);
+}
+
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logoImg {
+  height: 28px;
+  width: auto;
+}
+
+.logoText {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.topbarRight {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: var(--light);
+}
+
+.userEmail {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--dark);
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid rgba(var(--dark-rgb), 0.12);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(var(--dark-rgb), 0.6);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.logoutBtn:hover {
+  background: rgba(var(--accent-rgb), 0.06);
+  border-color: rgba(var(--accent-rgb), 0.2);
+  color: var(--accent);
+}
+
+.nav {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 32px;
+  height: 44px;
+  align-items: stretch;
+  flex-shrink: 0;
+  background: var(--light);
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.08);
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(var(--dark-rgb), 0.55);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.navLink:hover {
+  color: var(--dark);
+  background: rgba(var(--dark-rgb), 0.03);
+}
+
+.navLinkActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.content {
+  flex: 1;
+  padding: 24px 32px 32px;
+  overflow-y: auto;
+}

@@ -1,0 +1,354 @@
+.supportSection {
+  margin-top: 16px;
+
+  background: white;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  padding: 20px;
+  border: 1px solid #c0bdbd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.supportSection:hover {
+  box-shadow: 0 0 10px #585858;
+}
+
+.header {
+  margin-bottom: 12px;
+}
+
+.subText {
+  color: #666;
+  font-size: 14px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.grid {
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit,
+      minmax(240px, 1fr));
+
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  font-size: 12px;
+  font-weight: 600;
+
+  margin-bottom: 6px;
+
+  color: #555;
+}
+
+.field input {
+  padding: 7px 10px;
+
+  border-radius: 5px;
+  border: 1px solid #ccc;
+
+  background: #f5f5f5;
+
+  font-size: 13px;
+}
+
+.queryBox {
+  margin-top: 20px;
+
+  display: flex;
+  flex-direction: column;
+}
+
+.queryBox label {
+  font-size: 13px;
+  font-weight: 600;
+
+  margin-bottom: 8px;
+}
+
+.queryBox textarea {
+  min-height: 80px;
+
+  padding: 8px;
+
+  border-radius: 6px;
+  border: 1px solid #ccc;
+
+  font-size: 13px;
+
+  resize: vertical;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+
+  margin-top: 20px;
+}
+
+.submitBtn {
+  padding: 7px 14px;
+
+  background: #F20519;
+  color: white;
+
+  border: none;
+  border-radius: 5px;
+
+  font-size: 12px;
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+.submitBtn:hover {
+  background: #d00414;
+}
+
+.subuserIcon {
+  width: 34px;
+  height: 34px;
+  background: rgba(242, 5, 25, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: #F20519;
+}
+
+/* =========================
+   TICKET SECTION
+========================= */
+
+.ticketSection {
+  margin-top: 18px;
+
+  background: #ffffff;
+
+  border-radius: 12px;
+
+  padding: 16px;
+
+  border: 1px solid #e2e8f0;
+
+  box-shadow:
+    0 4px 20px rgba(15, 23, 42, 0.04);
+}
+
+.ticketSection h3 {
+  margin: 0 0 14px;
+
+  font-size: 16px;
+
+  font-weight: 700;
+
+  color: #0f172a;
+}
+
+/* =========================
+   TABLE WRAPPER
+========================= */
+
+.tableWrapper {
+  width: 100%;
+
+  overflow-x: auto;
+
+  border-radius: 16px;
+
+  border: 1px solid #e2e8f0;
+}
+
+/* =========================
+   TABLE
+========================= */
+
+.table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  min-width: 700px;
+
+  background: white;
+}
+
+/* =========================
+   HEADER
+========================= */
+
+.table thead {
+  background:
+    linear-gradient(135deg,
+      #0f172a,
+      #1e293b);
+}
+
+.table thead th {
+  padding: 10px 14px;
+
+  text-align: left;
+
+  color: white;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  letter-spacing: 0.4px;
+
+  white-space: nowrap;
+}
+
+/* =========================
+   BODY
+========================= */
+
+.table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+
+  transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.table tbody td {
+  padding: 10px 14px;
+
+  font-size: 13px;
+
+  color: #334155;
+
+  vertical-align: top;
+
+  line-height: 1.4;
+}
+
+/* =========================
+   QUERY COLUMN
+========================= */
+
+.table tbody td:nth-child(2) {
+  max-width: 500px;
+
+  white-space: pre-wrap;
+
+  word-break: break-word;
+}
+
+/* =========================
+   STATUS BADGES
+========================= */
+
+.open,
+.closed,
+.pending {
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-width: 90px;
+
+  padding: 8px 14px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+
+  font-weight: 700;
+
+  letter-spacing: 0.3px;
+
+  text-transform: uppercase;
+}
+
+/* OPEN */
+
+.open {
+  background: #dcfce7;
+
+  color: #166534;
+}
+
+/* CLOSED */
+
+.closed {
+  background: #fee2e2;
+
+  color: #991b1b;
+}
+
+/* PENDING */
+
+.pending {
+  background: #fef3c7;
+
+  color: #92400e;
+}
+
+/* =========================
+   EMPTY / LOADING
+========================= */
+
+.table tbody td[colspan="3"] {
+  text-align: center;
+
+  padding: 40px 20px;
+
+  color: #64748b;
+
+  font-weight: 500;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 768px) {
+
+  .ticketSection {
+    padding: 18px;
+  }
+
+  .ticketSection h3 {
+    font-size: 18px;
+  }
+
+  .table {
+    min-width: 600px;
+  }
+
+  .table thead th {
+    padding: 14px;
+    font-size: 13px;
+  }
+
+  .table tbody td {
+    padding: 14px;
+    font-size: 13px;
+  }
+
+  .open,
+  .closed,
+  .pending {
+    min-width: 80px;
+
+    font-size: 11px;
+
+    padding: 7px 12px;
+  }
+}

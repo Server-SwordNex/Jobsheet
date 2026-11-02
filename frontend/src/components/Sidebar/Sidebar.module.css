@@ -1,0 +1,146 @@
+.sidebar {
+  width: 200px;
+  min-width: 200px;
+  height: 100vh;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-right: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  overflow: hidden;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.collapsed {
+  width: 64px;
+  min-width: 64px;
+}
+
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.06);
+  flex-shrink: 0;
+}
+
+.logoIconImg {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.logoTextWrap {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.logoSub {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(var(--dark-rgb), 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.collapsed .logoArea {
+  justify-content: center;
+  padding: 0;
+}
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 8px;
+}
+
+.navList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.navLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: rgba(var(--dark-rgb), 0.5);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.collapsed .navLink {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.navLink:hover {
+  color: var(--dark);
+  background: rgba(var(--dark-rgb), 0.04);
+}
+
+.navLink.active {
+  color: var(--accent-hover);
+  background: rgba(var(--accent-rgb), 0.08);
+}
+
+.navLink.active::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px 0 0 3px;
+}
+
+.collapsed .navLink.active::before {
+  right: 0;
+  width: 3px;
+  height: 100%;
+}
+
+.navIcon {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.navLabel {
+  overflow: hidden;
+}
+
+.bottomSection {
+  border-top: 1px solid rgba(var(--dark-rgb), 0.06);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.collapsed .bottomSection {
+  align-items: stretch;
+}

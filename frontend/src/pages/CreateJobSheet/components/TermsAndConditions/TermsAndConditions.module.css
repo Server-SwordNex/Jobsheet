@@ -1,0 +1,68 @@
+.section {
+  background: var(--light);
+  border: 1px solid rgba(var(--dark-rgb), 0.08);
+  border-radius: 8px;
+  padding: 12px 14px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0 0 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.06);
+  flex-shrink: 0;
+}
+
+.textarea {
+  width: 100%;
+  padding: 7px 10px;
+  background: rgba(var(--dark-rgb), 0.04);
+  border: 1px solid rgba(var(--dark-rgb), 0.1);
+  border-radius: 6px;
+  color: var(--dark);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s;
+  box-sizing: border-box;
+  resize: none;
+  min-height: 60px;
+  flex: 1;
+}
+
+.textarea:hover {
+  background: rgba(var(--dark-rgb), 0.06);
+  border-color: rgba(var(--dark-rgb), 0.15);
+}
+
+.textarea:focus {
+  background: rgba(var(--accent-rgb), 0.04);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.1);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.wordCount {
+  font-size: 11px;
+  color: rgba(var(--dark-rgb), 0.4);
+  text-align: right;
+  margin-top: 4px;
+  flex-shrink: 0;
+}

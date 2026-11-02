@@ -1,0 +1,382 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 760px;
+  max-width: 94vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(30, 27, 75, 0.12);
+  animation: slideUp 0.25s ease;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modalHeader {
+  padding: 18px 24px 0;
+  flex-shrink: 0;
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--dark);
+  margin: 0;
+}
+
+.modalBody {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ─── Document ─── */
+
+.doc {
+  max-width: 210mm;
+  margin: 0 auto;
+}
+
+.docHeader {
+  text-align: center;
+  border-bottom: 3px solid var(--accent);
+  padding-bottom: 12px;
+  margin-bottom: 18px;
+}
+
+.docTitle {
+  margin: 0;
+  font-size: 22px;
+  color: var(--dark);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-weight: 800;
+}
+
+.meta {
+  display: flex;
+  justify-content: space-between;
+  background: var(--accent-soft);
+  border: 1px solid rgba(var(--accent-rgb), 0.1);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.meta strong {
+  font-weight: 600;
+  color: var(--dark);
+}
+
+/* ─── Blocks ─── */
+
+.block {
+  margin-bottom: 14px;
+}
+
+.blockTitle {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--accent);
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 4px;
+  margin: 0 0 8px;
+}
+
+.fRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 2px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 110px;
+}
+
+.wide {
+  flex: 0 0 100%;
+}
+
+.fLabel {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: rgba(var(--dark-rgb), 0.5);
+}
+
+.fValue {
+  font-size: 14px;
+  color: var(--dark);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* ─── Table ─── */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 4px;
+}
+
+.table th,
+.table td {
+  padding: 7px 10px;
+  font-size: 13px;
+  text-align: left;
+}
+
+.table th {
+  background: var(--accent-soft);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  font-weight: 700;
+  border-bottom: 2px solid rgba(var(--accent-rgb), 0.15);
+}
+
+.table td {
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.06);
+}
+
+.table tbody tr:hover {
+  background: rgba(var(--dark-rgb), 0.02);
+}
+
+.amt {
+  text-align: right;
+  font-weight: 600;
+}
+
+.totalRow td {
+  font-weight: 700;
+  border-top: 2px solid var(--accent);
+  border-bottom: none;
+  color: var(--accent);
+}
+
+.totalRow td.amt {
+  font-size: 15px;
+}
+
+/* ─── Terms ─── */
+
+.termsVal {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--dark);
+  margin: 0;
+  white-space: pre-wrap;
+  background: rgba(var(--dark-rgb), 0.02);
+  border: 1px solid rgba(var(--dark-rgb), 0.06);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+/* ─── Signatures ─── */
+
+.signatures {
+  display: flex;
+  justify-content: space-between;
+  margin: 24px 0 12px;
+  gap: 48px;
+}
+
+.signatureBox {
+  flex: 1;
+}
+
+.signatureLine {
+  border-top: 1px solid rgba(var(--dark-rgb), 0.3);
+  height: 40px;
+}
+
+.signatureLabel {
+  font-size: 11px;
+  color: rgba(var(--dark-rgb), 0.5);
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* ─── Footer ─── */
+
+.footer {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(var(--dark-rgb), 0.4);
+  border-top: 1px solid rgba(var(--dark-rgb), 0.06);
+  padding-top: 10px;
+  margin-top: 16px;
+}
+
+/* ─── Footer buttons ─── */
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 24px 18px;
+  flex-shrink: 0;
+}
+
+.confirmBtn {
+  padding: 10px 24px;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+}
+
+.confirmBtn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.35);
+}
+
+.confirmBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ─── Spinner ─── */
+
+.spinnerOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 16px;
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(var(--accent-rgb), 0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── PDF Viewer ─── */
+
+.pdfModal {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  width: 90vw;
+  height: 90vh;
+  max-width: 1100px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(30, 27, 75, 0.1);
+  animation: slideUp 0.25s ease;
+  overflow: hidden;
+}
+
+.pdfToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(var(--dark-rgb), 0.06);
+  flex-shrink: 0;
+}
+
+.pdfTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.pdfActions {
+  display: flex;
+  gap: 8px;
+}
+
+.downloadBtn {
+  padding: 7px 18px;
+  background: var(--accent);
+  border: none;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.downloadBtn:hover {
+  background: var(--accent-hover);
+}
+
+.exitBtn {
+  padding: 7px 18px;
+  background: transparent;
+  border: 1px solid rgba(var(--dark-rgb), 0.15);
+  border-radius: 7px;
+  color: rgba(var(--dark-rgb), 0.6);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.exitBtn:hover {
+  background: rgba(var(--dark-rgb), 0.04);
+}
+
+.pdfViewer {
+  flex: 1;
+  width: 100%;
+  border: none;
+}
