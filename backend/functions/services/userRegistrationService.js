@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { Timestamp } from "firebase-admin/firestore";
 import { tenantAuth, getCollection } from "../config/firebaseTenantConfig.js";
 import { tempOtpsCollections, usersCollections } from "../config/dbCollection.js";

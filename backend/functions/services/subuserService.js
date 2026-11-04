@@ -1,5 +1,5 @@
 import { FieldValue } from "firebase-admin/firestore";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { usersCollections, subUsersCollection } from "../config/dbCollection.js";
 import { tenantAuth } from "../config/firebaseTenantConfig.js";
 import { createSubuserModel } from "../models/subuserModel.js";

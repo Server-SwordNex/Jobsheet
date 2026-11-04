@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { Timestamp } from "firebase-admin/firestore";
 import { usersCollections, userSessionsCollections, subUsersCollection } from "../config/dbCollection.js";
