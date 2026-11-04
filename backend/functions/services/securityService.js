@@ -1,7 +1,7 @@
 import { db, tenantAuth } from "../config/firebaseTenantConfig.js";
 import admin from "firebase-admin";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { usersCollections, emailOtpsCollection } from "../config/dbCollection.js";
 import { config } from "../config/envConfig.js";
 import { mailService } from "../mail/mailService.js";
