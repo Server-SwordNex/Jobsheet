@@ -2,11 +2,11 @@ import { loginUser, logoutUser } from "../services/userLoginService.js";
 
 export async function loginHandler(req, res) {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
     const deviceInfo = req.headers["user-agent"] || "";
     const ipAddress = req.ip || req.connection?.remoteAddress || "";
 
-    const result = await loginUser(email, password, deviceInfo, ipAddress);
+    const result = await loginUser(email, password, deviceInfo, ipAddress, role);
     res.status(200).json(result);
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message || "Internal server error" });

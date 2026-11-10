@@ -8,31 +8,32 @@ import {
   remove,
   getAnnouncementsByRole
 } from "../controllers/announcementController.js";
+import { requireAdminAuth } from "../middleware/adminAuthMiddleware.js";
 
 const router = express.Router();
 
 /* =========================
-   ✅ CREATE
+   ✅ CREATE (ADMIN ONLY)
 ========================= */
-router.post("/api/create-announcement", createAnnouncement);
+router.post("/api/create-announcement", requireAdminAuth, createAnnouncement);
 
 
 /* =========================
-   ✅ GET ALL (SUPERADMIN ONLY)
+   ✅ GET ALL (ADMIN ONLY)
 ========================= */
-router.get("/api/getall-announcements", getAllAnnouncements);
+router.get("/api/getall-announcements", requireAdminAuth, getAllAnnouncements);
 
 
 /* =========================
-   ✅ TOGGLE STATUS
+   ✅ TOGGLE STATUS (ADMIN ONLY)
 ========================= */
-router.put("/api/toggle-announcement/:id", toggle);
+router.put("/api/toggle-announcement/:id", requireAdminAuth, toggle);
 
 
 /* =========================
-   ✅ DELETE (SOFT DELETE)
+   ✅ DELETE (SOFT DELETE) (ADMIN ONLY)
 ========================= */
-router.delete("/api/delete-announcement/:id", remove);
+router.delete("/api/delete-announcement/:id", requireAdminAuth, remove);
 
 
 router.get("/api/announcements", getAnnouncementsByRole);   

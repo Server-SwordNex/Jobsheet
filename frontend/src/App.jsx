@@ -62,6 +62,9 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/google-register" element={<GoogleRegisterPage />} />
       <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+      <Route path="/admin/login" element={<Navigate to="/superadmin/login" replace />} />
+      <Route path="/admin" element={<Navigate to="/superadmin/dashboard" replace />} />
+      <Route path="/admin/*" element={<Navigate to="/superadmin/dashboard" replace />} />
       <Route element={<ProtectedRoute />}>
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<Dashboard />} />

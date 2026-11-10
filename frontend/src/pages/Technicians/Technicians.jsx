@@ -35,7 +35,8 @@ function Technicians() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    const field = name === 'techMobile' ? 'mobileNo' : name;
+    setForm(prev => ({ ...prev, [field]: value }));
   };
 
   const openAdd = () => {
@@ -222,19 +223,46 @@ function Technicians() {
               <h2 className={styles.modalTitle}>{editingId ? 'Edit Technician' : 'Add Technician'}</h2>
               <button className={styles.closeBtn} onClick={() => setModalOpen(false)}>&times;</button>
             </div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} autoComplete="off">
               <div className={styles.modalBody}>
                 <div className={styles.field}>
                   <label className={styles.label}>Name</label>
-                  <input className={styles.input} name="name" placeholder="Enter name" value={form.name} onChange={handleChange} />
+                  <input
+                    className={styles.input}
+                    name="name"
+                    placeholder="Enter name"
+                    value={form.name}
+                    onChange={handleChange}
+                    autoComplete="off"
+                  />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Email</label>
-                  <input className={styles.input} name="email" type="email" placeholder="Enter email" value={form.email} onChange={handleChange} />
+                  <input
+                    className={styles.input}
+                    name="email"
+                    type="email"
+                    placeholder="Enter email"
+                    value={form.email}
+                    onChange={handleChange}
+                    autoComplete="off"
+                  />
                 </div>
                 <div className={styles.field}>
                   <label className={styles.label}>Mobile No</label>
-                  <input className={styles.input} name="mobileNo" type="tel" placeholder="Enter mobile number" value={form.mobileNo} onChange={handleChange} />
+                  <input
+                    className={styles.input}
+                    name="techMobile"
+                    id="techMobile"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Enter mobile number"
+                    value={form.mobileNo || ''}
+                    onChange={handleChange}
+                    autoComplete="off"
+                    data-lpignore="true"
+                    data-form-type="other"
+                  />
                 </div>
               </div>
               <div className={styles.modalFooter}>

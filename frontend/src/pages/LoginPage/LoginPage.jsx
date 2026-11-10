@@ -146,14 +146,20 @@ function LoginPage() {
     setLoginError('');
     setLoading(true);
     try {
-      const data = await login(loginData.email, loginData.password);
+      const email = loginData.email.trim();
+      const data = await login(email, loginData.password, loginRole);
       setItem('token', data.token);
-      setItem('auth', { token: data.token, role: data.user?.role || 'user', email: loginData.email });
+      setItem('auth', { token: data.token, role: data.user?.role || loginRole, email });
       setItem('user', data.user);
       toast.success('Signed in successfully');
-      navigate('/dashboard');
+      if (data.user?.role === 'superadmin') {
+        navigate('/superadmin/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
-      const msg = err?.message || err?.error || (typeof err === 'string' ? err : null) || 'Login failed. Please try again.';
+      const msg = err?.error || err?.message || (typeof err === 'string' ? err : null) || 'Login failed. Please try again.';
+      setLoginError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -190,14 +196,20 @@ function LoginPage() {
               <button
                 type="button"
                 className={`${styles.toggleTab} ${loginRole === 'admin' ? styles.toggleTabActive : ''}`}
-                onClick={() => setLoginRole('admin')}
+                onClick={() => {
+                  setLoginRole('admin');
+                  setLoginError('');
+                }}
               >
                 Admin Login
               </button>
               <button
                 type="button"
                 className={`${styles.toggleTab} ${loginRole === 'team' ? styles.toggleTabActive : ''}`}
-                onClick={() => setLoginRole('team')}
+                onClick={() => {
+                  setLoginRole('team');
+                  setLoginError('');
+                }}
               >
                 Team Login
               </button>
@@ -215,7 +227,7 @@ function LoginPage() {
                   className={styles.input}
                 />
                 <label htmlFor="loginEmail" className={styles.label}>
-                  {loginRole === 'team' ? 'Team Email' : 'Email'}
+                  {loginRole === 'team' ? 'Team Email' : 'Admin Email'}
                 </label>
               </div>
               <div className={styles.field}>
@@ -253,7 +265,7 @@ function LoginPage() {
               </div>
               <button type="submit" className={styles.submitBtn} disabled={loading}>
                 {loading ? <Spinner /> : <LockIcon />}
-                {loading ? 'Signing In...' : loginRole === 'team' ? 'Sign In as Team' : 'Sign In'}
+                {loading ? 'Signing In...' : loginRole === 'team' ? 'Sign In as Team' : 'Sign In as Admin'}
               </button>
             </form>
 
@@ -275,6 +287,7 @@ function LoginPage() {
           <div className={styles.footerLinks}>
             <Link to="/search">Search</Link>
             <Link to="/register">Register</Link>
+            <Link to="/admin/login">Admin Login</Link>
           </div>
         </div>
       </div>

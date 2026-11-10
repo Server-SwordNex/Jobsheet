@@ -36,25 +36,34 @@ function SuperAdminLogin() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (loginError) setLoginError('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.email) { toast.error('Email is required'); return; }
-    if (!formData.password) { toast.error('Password is required'); return; }
+    if (!formData.email) { toast.error('Email is required'); setLoginError('Email is required'); return; }
+    if (!formData.password) { toast.error('Password is required'); setLoginError('Password is required'); return; }
+    setLoginError('');
     setLoading(true);
     try {
-      const data = await superAdminLogin(formData.email, formData.password);
+      const email = formData.email.trim();
+      const password = formData.password.trim();
+      const data = await superAdminLogin(email, password);
       setItem('token', data.token);
-      setItem('auth', { token: data.token, role: 'superadmin', email: formData.email });
-      toast.success('Signed in as Super Admin');
+      setItem('auth', { token: data.token, role: 'superadmin', email });
+      if (data.user) {
+        setItem('user', data.user);
+      }
+      toast.success('Signed in as Admin');
       navigate('/superadmin/dashboard');
     } catch (err) {
-      const msg = err?.message || err?.error || (typeof err === 'string' ? err : null) || 'Login failed. Please try again.';
+      const msg = err?.error || err?.message || (typeof err === 'string' ? err : null) || 'Unauthorized Access: Invalid Admin Credentials';
+      setLoginError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -69,12 +78,12 @@ function SuperAdminLogin() {
             <img src={logo} alt="SwordNex" className={styles.logoImg} />
           </div>
           <div className={styles.brandTagline}>
-            <h1 className={styles.brandTitle}>Super Admin</h1>
+            <h1 className={styles.brandTitle}>Admin Portal</h1>
             <p className={styles.brandDesc}>
-              Manage users, oversee operations, and control system-wide settings from a single dashboard.
+              System-wide administrative access. Manage users, pricing plans, announcements, and support tickets.
             </p>
           </div>
-          <div className={styles.badge}>Authorized personnel only</div>
+          <div className={styles.badge}>Admin Personnel Only</div>
         </div>
         <div className={styles.orb1} />
         <div className={styles.orb2} />
@@ -85,6 +94,7 @@ function SuperAdminLogin() {
         <div className={styles.formContent}>
           <div className={styles.tabPanel}>
             <form onSubmit={handleSubmit} className={styles.form}>
+              {loginError && <div className={styles.errorMsg}>{loginError}</div>}
               <div className={styles.field}>
                 <input
                   type="email"
@@ -95,7 +105,7 @@ function SuperAdminLogin() {
                   onChange={handleChange}
                   className={styles.input}
                 />
-                <label htmlFor="saEmail" className={styles.label}>Email</label>
+                <label htmlFor="saEmail" className={styles.label}>Admin Email</label>
               </div>
               <div className={styles.field}>
                 <input
@@ -107,7 +117,7 @@ function SuperAdminLogin() {
                   onChange={handleChange}
                   className={styles.input}
                 />
-                <label htmlFor="saPassword" className={styles.label}>Password</label>
+                <label htmlFor="saPassword" className={styles.label}>Admin Password</label>
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -120,7 +130,7 @@ function SuperAdminLogin() {
               </div>
               <button type="submit" className={styles.submitBtn} disabled={loading}>
                 <LockIcon />
-                {loading ? 'Signing In...' : 'Sign In as Super Admin'}
+                {loading ? 'Signing In...' : 'Sign In as Admin'}
               </button>
             </form>
           </div>

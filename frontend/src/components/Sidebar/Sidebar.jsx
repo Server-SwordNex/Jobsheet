@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   FilePlus,
@@ -50,7 +50,7 @@ function Sidebar({ collapsed }) {
 
   return (
     <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
-      <div className={styles.logoArea}>
+      <Link to="/dashboard" className={styles.logoArea} aria-label="Go to Dashboard">
         <img src={iconLogo} alt="SwordNex" className={styles.logoIconImg} />
         {!collapsed && (
           <div className={styles.logoTextWrap}>
@@ -58,7 +58,7 @@ function Sidebar({ collapsed }) {
             <span className={styles.logoSub}>Jobsheet</span>
           </div>
         )}
-      </div>
+      </Link>
 
       <nav className={styles.nav}>
         <ul className={styles.navList}>

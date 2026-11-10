@@ -7,14 +7,27 @@ export async function getDashboardData(uid, subuserId) {
     throw error;
   }
 
+  let user;
   const userDoc = await usersCollections.doc(uid).get();
   if (!userDoc.exists) {
-    const error = new Error("User not found");
-    error.status = 404;
-    throw error;
+    if (uid === "superadmin") {
+      user = {
+        id: "superadmin",
+        uid: "superadmin",
+        companyName: "Super Admin",
+        email: "admin@jobsheet.com",
+        username: "superadmin",
+        role: "superadmin",
+        plan: "unlimited",
+      };
+    } else {
+      const error = new Error("User not found");
+      error.status = 404;
+      throw error;
+    }
+  } else {
+    user = { id: userDoc.id, ...userDoc.data() };
   }
-
-  const user = { id: userDoc.id, ...userDoc.data() };
 
   const jobsheetsSnap = await jobsheetsCollections
     .where("generatedById", "==", uid)

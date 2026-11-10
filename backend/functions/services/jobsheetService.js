@@ -1,10 +1,16 @@
 import { PDFDocument } from "pdf-lib";
 import { FieldValue } from "firebase-admin/firestore";
+import path from "path";
+import fs from "fs/promises";
+import { fileURLToPath } from "url";
 import { jobsheetsCollections, techniciansCollections, usersCollections } from "../config/dbCollection.js";
 import { bucket } from "../config/firebaseTenantConfig.js";
 import JobsheetModel from "../models/jobsheetModel.js";
 import { assignJobsheetToTechnician } from "./technicianService.js";
 import whatsappService from "../whatsapp/whatsappService.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 const MAX_PDF_SIZE = 1048576;
@@ -55,21 +61,32 @@ export async function createJobsheet({ pdfBuffer, fields }) {
 
   const compressedBuffer = await compressPdf(pdfBuffer);
 
-  const file = bucket.file(storagePath);
-  await file.save(compressedBuffer, {
-    contentType: "application/pdf",
-    metadata: {
-      customMetadata: {
-        jobsheetNo: rawData.jobsheetNo,
-        generatedById: rawData.generatedById,
+  let pdfUrl = "";
+  try {
+    const file = bucket.file(storagePath);
+    await file.save(compressedBuffer, {
+      contentType: "application/pdf",
+      metadata: {
+        customMetadata: {
+          jobsheetNo: rawData.jobsheetNo,
+          generatedById: rawData.generatedById,
+        },
       },
-    },
-  });
+    });
 
-  const [pdfUrl] = await file.getSignedUrl({
-    action: "read",
-    expires: "01-01-2099",
-  });
+    const [signedUrl] = await file.getSignedUrl({
+      action: "read",
+      expires: "01-01-2099",
+    });
+    pdfUrl = signedUrl;
+  } catch (storageErr) {
+    console.warn("⚠️ Firebase Storage unavailable, saving PDF to local uploads:", storageErr.message);
+    const localRelative = `uploads/${storagePath}`;
+    const localFile = path.join(__dirname, "..", localRelative);
+    await fs.mkdir(path.dirname(localFile), { recursive: true });
+    await fs.writeFile(localFile, compressedBuffer);
+    pdfUrl = `http://localhost:5000/${localRelative}`;
+  }
 
   const model = new JobsheetModel({
     ...rawData,
@@ -81,9 +98,14 @@ export async function createJobsheet({ pdfBuffer, fields }) {
   const jobsheetId = docRef.id;
 
   const userRef = usersCollections.doc(rawData.generatedById);
-  await userRef.update({
-    totalJobSheetsCreated: FieldValue.increment(1),
-  });
+  const userSnap = await userRef.get();
+  if (userSnap.exists) {
+    await userRef.update({
+      totalJobSheetsCreated: FieldValue.increment(1),
+    });
+  } else {
+    console.warn(`User ${rawData.generatedById} not found in users collection; skipped totalJobSheetsCreated increment.`);
+  }
 
   let resolvedTechnicianId = rawData.technicianId;
 
