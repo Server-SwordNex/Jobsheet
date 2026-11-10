@@ -17,6 +17,7 @@ import Technicians from "./pages/Technicians/Technicians.jsx"
 import Reports from './pages/Reports/Reports.jsx'
 import Calendar from './pages/Calendar/Calendar.jsx'
 import SettingsPage from './pages/Settings/SettingsPage.jsx'
+import SubscriptionPage from './pages/SubscriptionPage/SubscriptionPage.jsx'
 import Layout from "./components/Layout/Layout.jsx"
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx'
 import SuperAdminRoute from './components/SuperAdminRoute/SuperAdminRoute.jsx'
@@ -76,6 +77,7 @@ function App() {
         <Route path="/technicians" element={<Technicians />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
       </Route>
       </Route>
       <Route path="/superadmin" element={<SuperAdminRoute />}>

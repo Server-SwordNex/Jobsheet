@@ -176,39 +176,3 @@
   color: var(--dark);
 }
 
-.roleToggleBtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 1px solid rgba(var(--dark-rgb), 0.12);
-  background: rgba(var(--dark-rgb), 0.03);
-  color: var(--dark);
-  font-size: 12px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition: all 0.15s ease-in-out;
-}
-
-.roleToggleBtn:hover {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.15);
-}
-
-.roleIndicator {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #10B981;
-  transition: background 0.15s ease;
-}
-
-.roleIndicatorTeam {
-  background: #6366F1;
-}
-

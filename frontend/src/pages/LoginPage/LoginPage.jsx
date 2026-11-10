@@ -227,7 +227,7 @@ function LoginPage() {
                   className={styles.input}
                 />
                 <label htmlFor="loginEmail" className={styles.label}>
-                  {loginRole === 'team' ? 'Team Email' : 'Admin Email'}
+                  {loginRole === 'team' ? 'Email' : 'Admin Email'}
                 </label>
               </div>
               <div className={styles.field}>
@@ -287,7 +287,6 @@ function LoginPage() {
           <div className={styles.footerLinks}>
             <Link to="/search">Search</Link>
             <Link to="/register">Register</Link>
-            <Link to="/admin/login">Admin Login</Link>
           </div>
         </div>
       </div>

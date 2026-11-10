@@ -1,12 +1,5 @@
 import jwt from 'jsonwebtoken';
 import { config } from "../config/envConfig.js";
-import { usersCollections, subUsersCollection } from "../config/dbCollection.js";
-
-const withTimeout = (promise, ms = 1500) =>
-  Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
-  ]);
 
 export async function validateSuperAdmin(email, password) {
   const cleanEmail = (email || '').trim().toLowerCase();
@@ -25,35 +18,8 @@ export async function validateSuperAdmin(email, password) {
     return true;
   }
 
-  // 2. If it doesn't match, verify if this is a normal user or team user attempting to log into Admin panel
-  try {
-    const userSnapshot = await withTimeout(
-      usersCollections.where("email", "==", cleanEmail).limit(1).get(),
-      1500
-    );
-
-    if (!userSnapshot.empty) {
-      const error = new Error("Unauthorized Access: Normal user credentials cannot access the Admin panel.");
-      error.status = 403;
-      throw error;
-    }
-
-    const subuserSnapshot = await withTimeout(
-      subUsersCollection.where("email", "==", cleanEmail).limit(1).get(),
-      1500
-    );
-
-    if (!subuserSnapshot.empty) {
-      const error = new Error("Unauthorized Access: Normal user credentials cannot access the Admin panel.");
-      error.status = 403;
-      throw error;
-    }
-  } catch (err) {
-    if (err.status) throw err;
-  }
-
-  // 3. Invalid admin credentials
-  const error = new Error("Unauthorized Access: Invalid Admin Credentials");
+  // 2. Reject all other attempts with standard error
+  const error = new Error("Invalid email or password");
   error.status = 401;
   throw error;
 }

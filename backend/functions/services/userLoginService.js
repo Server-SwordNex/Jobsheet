@@ -5,13 +5,24 @@ import { usersCollections, userSessionsCollections, subUsersCollection } from ".
 import { config } from "../config/envConfig.js";
 import { createSessionModel } from "../models/sessionModel.js";
 
+const withTimeout = (promise, ms = 2500) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Database query timed out')), ms)),
+  ]);
+
 async function findUserInCollection(collection, email) {
   const clean = (email || '').trim().toLowerCase();
-  let snap = await collection.where("email", "==", clean).limit(1).get();
-  if (snap.empty && clean !== (email || '').trim()) {
-    snap = await collection.where("email", "==", (email || '').trim()).limit(1).get();
+  try {
+    let snap = await withTimeout(collection.where("email", "==", clean).limit(1).get(), 2500);
+    if (snap.empty && clean !== (email || '').trim()) {
+      snap = await withTimeout(collection.where("email", "==", (email || '').trim()).limit(1).get(), 2500);
+    }
+    return snap;
+  } catch (err) {
+    console.warn("findUserInCollection error or timeout:", err.message);
+    return { empty: true, docs: [] };
   }
-  return snap;
 }
 
 export async function loginUser(email, password, deviceInfo = "", ipAddress = "", requestedRole = null) {
@@ -30,8 +41,8 @@ export async function loginUser(email, password, deviceInfo = "", ipAddress = ""
   // If superadmin logs in through normal login page, permit it only if requestedRole is admin/null
   if (cleanSuperEmail && cleanEmail === cleanSuperEmail) {
     if (cleanRole === "team") {
-      const error = new Error("Access denied. This is an Admin account, please use Admin Login.");
-      error.status = 403;
+      const error = new Error("Invalid email or password");
+      error.status = 401;
       throw error;
     }
     if (cleanPassword === cleanSuperPass) {
@@ -58,82 +69,38 @@ export async function loginUser(email, password, deviceInfo = "", ipAddress = ""
     }
   }
 
+  // "Admin Login should only be used by super admin to login. When an user tries to login with Admin option, It shouldn't work."
+  if (cleanRole === "admin") {
+    const error = new Error("Invalid email or password");
+    error.status = 401;
+    throw error;
+  }
+
+  // "The Team Login should be used by registered users to login."
   let userData;
   let doc;
   let isSubuser = false;
 
-  if (cleanRole === "team") {
-    // 1. Team login: must be in subUsersCollection
+  // Search registered users first
+  const userSnapshot = await findUserInCollection(usersCollections, cleanEmail);
+
+  if (!userSnapshot.empty) {
+    doc = userSnapshot.docs[0];
+    userData = doc.data();
+    isSubuser = false;
+  } else {
+    // Search subusers / staff
     const subuserSnapshot = await findUserInCollection(subUsersCollection, cleanEmail);
 
-    if (!subuserSnapshot.empty) {
-      doc = subuserSnapshot.docs[0];
-      userData = doc.data();
-      isSubuser = true;
-    } else {
-      // Check if it's an admin user trying to use team login
-      const adminSnapshot = await findUserInCollection(usersCollections, cleanEmail);
-      if (!adminSnapshot.empty) {
-        const adminData = adminSnapshot.docs[0].data();
-        const passwordMatch = (await bcrypt.compare(cleanPassword, adminData.password || "")) ||
-                              (await bcrypt.compare(password, adminData.password || ""));
-        if (passwordMatch) {
-          const error = new Error("Access denied. This is an Admin account, please use Admin Login.");
-          error.status = 403;
-          throw error;
-        }
-      }
-
+    if (subuserSnapshot.empty) {
       const error = new Error("Invalid email or password");
       error.status = 401;
       throw error;
     }
-  } else if (cleanRole === "admin") {
-    // 2. Admin login: must be in usersCollections
-    const adminSnapshot = await findUserInCollection(usersCollections, cleanEmail);
 
-    if (!adminSnapshot.empty) {
-      doc = adminSnapshot.docs[0];
-      userData = doc.data();
-      isSubuser = false;
-    } else {
-      // Check if it's a team subuser trying to use admin login
-      const subuserSnapshot = await findUserInCollection(subUsersCollection, cleanEmail);
-      if (!subuserSnapshot.empty) {
-        const subuserData = subuserSnapshot.docs[0].data();
-        const passwordMatch = (await bcrypt.compare(cleanPassword, subuserData.password || "")) ||
-                              (await bcrypt.compare(password, subuserData.password || ""));
-        if (passwordMatch) {
-          const error = new Error("Access denied. This is a Team account, please use Team Login.");
-          error.status = 403;
-          throw error;
-        }
-      }
-
-      const error = new Error("Invalid email or password");
-      error.status = 401;
-      throw error;
-    }
-  } else {
-    // 3. Fallback when no role is specified
-    const adminSnapshot = await findUserInCollection(usersCollections, cleanEmail);
-
-    if (!adminSnapshot.empty) {
-      doc = adminSnapshot.docs[0];
-      userData = doc.data();
-      isSubuser = false;
-    } else {
-      const subuserSnapshot = await findUserInCollection(subUsersCollection, cleanEmail);
-      if (subuserSnapshot.empty) {
-        const error = new Error("Invalid email or password");
-        error.status = 401;
-        throw error;
-      }
-
-      doc = subuserSnapshot.docs[0];
-      userData = doc.data();
-      isSubuser = true;
-    }
+    doc = subuserSnapshot.docs[0];
+    userData = doc.data();
+    isSubuser = true;
   }
 
   // Verify password for found account
@@ -148,18 +115,6 @@ export async function loginUser(email, password, deviceInfo = "", ipAddress = ""
   // Use team role if subuser, otherwise user's role (admin)
   const role = isSubuser ? (userData.role || "team") : (userData.role || "admin");
 
-  // Enforce role strictly
-  if (cleanRole === "admin" && role === "team") {
-    const error = new Error("Access denied. This is a Team account, please use Team Login.");
-    error.status = 403;
-    throw error;
-  }
-
-  if (cleanRole === "team" && (role === "admin" || role === "superadmin")) {
-    const error = new Error("Access denied. This is an Admin account, please use Admin Login.");
-    error.status = 403;
-    throw error;
-  }
   const tokenPayload = { userId: doc.id, email: userData.email, role: role };
   const token = jwt.sign(tokenPayload, config.jwtSecret, {
     expiresIn: config.jwtExpiresIn,

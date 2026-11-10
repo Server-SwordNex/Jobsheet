@@ -101,7 +101,7 @@ export default function SettingsPage() {
           {activeConfig === "Security Settings" && <Security />}
           {activeConfig === "Profile" && <Profile />}
           {activeConfig === "Subscriptions" && (
-            <Subscription onUpgrade={() => navigate("/pricing")} />
+            <Subscription onUpgrade={() => navigate("/subscription")} />
           )}
           {activeConfig === "Support" && <Support />}
           {activeConfig === "Jobsheet" && <JobsheetSettings />}
