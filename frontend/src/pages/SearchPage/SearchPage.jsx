@@ -1,25 +1,17 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import TypingText from '../../components/TypingText/TypingText';
-import logo from '../../assets/jobsheet-logo.png';
+import { FileText, Phone, User, Search, Download } from 'lucide-react';
 import { searchJobsheet } from '../../api/endpoints';
-import styles from './SearchPage.module.css';
+import AuthShell from '../../components/AuthShell/AuthShell';
+import ui from '../../components/AuthShell/AuthShell.module.css';
+import { Field, Button } from '../../components/AuthShell/AuthFields';
 
-const SearchIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8" />
-    <path d="m21 21-4.3-4.3" />
-  </svg>
-);
-
-
-
-const Spinner = () => (
-  <svg className={styles.spinner} width="18" height="18" viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
-    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-  </svg>
-);
+const STATUS_CLASS = {
+  initiated: ui.stInitiated,
+  'in-progress': ui.stProgress,
+  completed: ui.stDone,
+  cancelled: ui.stCancelled,
+};
 
 function SearchPage() {
   const [searchData, setSearchData] = useState({ jobId: '', mobileNumber: '', name: '' });
@@ -29,159 +21,125 @@ function SearchPage() {
 
   const handleSearchChange = (e) => {
     const { name, value } = e.target;
-    setSearchData(prev => ({ ...prev, [name]: value }));
+    setSearchData((prev) => ({ ...prev, [name]: value }));
+    if (error) setError(null);
   };
 
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!searchData.jobId || !searchData.mobileNumber) {
-      setError("Job ID and Mobile Number are required");
+    if (!searchData.jobId.trim() || !searchData.mobileNumber.trim()) {
+      setError('Job ID and Mobile Number are required');
       return;
     }
     setIsLoading(true);
     setError(null);
     setSearchResults(null);
     try {
-      const result = await searchJobsheet(searchData.jobId, searchData.mobileNumber, searchData.name);
+      const result = await searchJobsheet(searchData.jobId.trim(), searchData.mobileNumber.trim(), searchData.name.trim());
       setSearchResults(result);
     } catch (err) {
-      console.error(err);
-      setError(err.error || err.message || "Failed to search jobsheet");
+      setError(err?.error || err?.message || 'Failed to search jobsheet');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const r = searchResults;
+
   return (
-    <div className={styles.container}>
-      <div className={styles.leftPanel}>
-        <div className={styles.leftContent}>
-          <div className={styles.brandLogo}>
-            <img src={logo} alt="SwordNex" className={styles.logoImg} />
+    <AuthShell title="Track your job sheet" subtitle="Enter your Job ID and the mobile number you gave us.">
+      <form className={ui.form} onSubmit={handleSearch} noValidate>
+        {error && <div className={ui.alert}>{error}</div>}
+
+        <Field
+          label="Job ID"
+          name="jobId"
+          icon={FileText}
+          placeholder="e.g. JS-JS/001"
+          value={searchData.jobId}
+          onChange={handleSearchChange}
+          autoFocus
+        />
+        <Field
+          label="Mobile number"
+          name="mobileNumber"
+          type="tel"
+          icon={Phone}
+          inputMode="tel"
+          placeholder="The number on your job sheet"
+          value={searchData.mobileNumber}
+          onChange={handleSearchChange}
+        />
+        <Field
+          label="Name (optional)"
+          name="name"
+          icon={User}
+          placeholder="Customer name"
+          value={searchData.name}
+          onChange={handleSearchChange}
+        />
+
+        <Button type="submit" loading={isLoading}>
+          {!isLoading && <Search size={17} />}
+          {isLoading ? 'Searching...' : 'Search job sheet'}
+        </Button>
+      </form>
+
+      {r && (
+        <div className={ui.result}>
+          <div className={ui.resultHead}>
+            <div>
+              <small>JOB SHEET</small>
+              <strong>{r.jobsheetNo}</strong>
+            </div>
+            <span className={`${ui.statusBadge} ${STATUS_CLASS[r.status] || ui.stInitiated}`}>{r.status || 'initiated'}</span>
           </div>
-          <div className={styles.brandTagline}>
-            <h1 className={styles.brandTitle}>
-              <TypingText text="Jobsheet Management" speed={60} />
-            </h1>
-            <p className={styles.brandDesc}>
-              Track, manage, and update work orders seamlessly. Stay on top of every job from start to finish.
-            </p>
+
+          <div className={ui.resultRow}>
+            <span>Customer</span>
+            <span>{r.customer || '-'}</span>
           </div>
+          <div className={ui.resultRow}>
+            <span>Product</span>
+            <span>{[r.productName, r.modelName].filter(Boolean).join(' ') || '-'}</span>
+          </div>
+          <div className={ui.resultRow}>
+            <span>Service</span>
+            <span>{r.serviceType || 'General Service'}</span>
+          </div>
+          <div className={ui.resultRow}>
+            <span>Date</span>
+            <span>{r.date || 'No date'}</span>
+          </div>
+          <div className={ui.resultRow}>
+            <span>Technician</span>
+            <span>{r.technician || 'Not assigned'}</span>
+          </div>
+          {r.description && <p className={ui.resultNote}>{r.description}</p>}
+          <div className={ui.resultTotal}>
+            <span>Total</span>
+            <span>₹{r.total || r.cost || 0}</span>
+          </div>
+
+          {r.pdfLink && (
+            <a href={r.pdfLink} target="_blank" rel="noopener noreferrer" className={ui.btnGhost} style={{ marginTop: 14, textDecoration: 'none' }}>
+              <Download size={16} /> Preview &amp; download PDF
+            </a>
+          )}
         </div>
-        <div className={styles.orb1} />
-        <div className={styles.orb2} />
-        <div className={styles.gridPattern} />
-      </div>
+      )}
 
-      <div className={styles.rightPanel}>
-        <div className={styles.formContent}>
-          <div className={styles.tabPanel}>
-            <form onSubmit={handleSearch} className={styles.form}>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="jobId"
-                  name="jobId"
-                  placeholder=" "
-                  value={searchData.jobId}
-                  onChange={handleSearchChange}
-                  className={styles.input}
-                />
-                <label htmlFor="jobId" className={styles.label}>Job ID</label>
-              </div>
-              <div className={styles.field}>
-                <input
-                  type="tel"
-                  id="mobileNumber"
-                  name="mobileNumber"
-                  placeholder=" "
-                  value={searchData.mobileNumber}
-                  onChange={handleSearchChange}
-                  className={styles.input}
-                />
-                <label htmlFor="mobileNumber" className={styles.label}>Mobile Number</label>
-              </div>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  placeholder=" "
-                  value={searchData.name}
-                  onChange={handleSearchChange}
-                  className={styles.input}
-                />
-                <label htmlFor="name" className={styles.label}>Name (Optional)</label>
-              </div>
-              <button type="submit" className={styles.submitBtn} disabled={isLoading}>
-                {isLoading ? <Spinner /> : <SearchIcon />}
-                {isLoading ? 'Searching...' : 'Search Jobsheet'}
-              </button>
-            </form>
-
-            {error && (
-              <div className={styles.errorMsg} style={{ marginTop: '16px' }}>
-                {error}
-              </div>
-            )}
-
-            {searchResults && (
-              <div className={styles.resultsCard}>
-                <div className={styles.resultsHeader}>
-                  <h3 className={styles.jobTitle}>{searchResults.jobsheetNo}</h3>
-                  <span className={styles.jobCompany}>{searchResults.customer}</span>
-                </div>
-                <div className={styles.jobMeta}>
-                  <span>{searchResults.productName} {searchResults.modelName || ''}</span>
-                  <span className={styles.dot}>·</span>
-                  <span>{searchResults.date || 'No Date'}</span>
-                </div>
-                <div className={styles.jobSalary}>
-                  {searchResults.serviceType || 'General Service'} &mdash; ₹{searchResults.total || searchResults.cost || 0}
-                </div>
-                {searchResults.description && (
-                  <p className={styles.jobDescription}>{searchResults.description}</p>
-                )}
-                <div className={styles.jobFooter}>
-                  <span className={styles.applicants}>
-                    Technician: {searchResults.technician || 'Not Assigned'}
-                  </span>
-                  <span className={`${styles.statusBadge} ${styles[searchResults.status?.toLowerCase() || 'initiated']}`}>
-                    {searchResults.status}
-                  </span>
-                </div>
-                
-                {searchResults.pdfLink && (
-                  <div className={styles.pdfActions}>
-                    <a 
-                      href={searchResults.pdfLink} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className={styles.pdfBtn}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                      </svg>
-                      Preview & Download PDF
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className={styles.footer}>
-          <p>&copy; 2026 SwordNex. All rights reserved.</p>
-          <div className={styles.footerLinks}>
-            <Link to="/login">Sign In</Link>
-            <Link to="/register">Register</Link>
-          </div>
-        </div>
-      </div>
-    </div>
+      <p className={ui.switchLine}>
+        Run a service business?{' '}
+        <Link to="/login" className={ui.link}>
+          Sign in
+        </Link>{' '}
+        or{' '}
+        <Link to="/register" className={ui.link}>
+          create an account
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
 

@@ -143,13 +143,18 @@ import Adduser from "./AddUser/Adduser";
 import { Users, UserCog } from "lucide-react";
 import { getSubusers, deleteSubuser } from "../../../api/subusers";
 import { toast } from "react-toastify";
+import { useEntitlements } from "../../../context/EntitlementsContext";
 
 export default function Subuser() {
   const [showAddMember, setShowAddMember] = useState(false);
   const [users, setUsers] = useState([]);
 
-  const [subUserLimit, setSubUserLimit] = useState(3);
+  // the plan decides the limit (null = unlimited); the number saved at sign-up is only a fallback
+  const { entitlements } = useEntitlements();
+  const [savedLimit, setSavedLimit] = useState(3);
+  const subUserLimit = entitlements ? entitlements.limits.teamMembers : savedLimit;
   const [currentSubUserCount, setCurrentSubUserCount] = useState(0);
+  const limitReached = subUserLimit !== null && currentSubUserCount >= subUserLimit;
 
   const [loading, setLoading] = useState(true); // 🔥 page loader
   const [deletingId, setDeletingId] = useState(null);
@@ -162,7 +167,7 @@ export default function Subuser() {
       const userData = JSON.parse(localStorage.getItem("user")) || {};
       if (!userData?.uid) return;
 
-      setSubUserLimit(userData.subUserLimit || 3);
+      setSavedLimit(Number(userData.subuserLimit ?? userData.subUserLimit) || 3);
 
       const res = await getSubusers(userData.uid);
       setUsers(res.data || []);
@@ -233,7 +238,7 @@ export default function Subuser() {
 
             <div className={styles.usage}>
               USAGE
-              <span>{currentSubUserCount} / {subUserLimit}</span>
+              <span>{currentSubUserCount} / {subUserLimit === null ? '∞' : subUserLimit}</span>
             </div>
           </div>
 
@@ -244,7 +249,7 @@ export default function Subuser() {
             <button
               className={styles.addBtn}
               onClick={() => setShowAddMember(true)}
-              disabled={currentSubUserCount >= subUserLimit}
+              disabled={limitReached}
             >
               + Add Member
             </button>

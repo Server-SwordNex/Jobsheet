@@ -1,4 +1,4 @@
-const BASE = import.meta.env.VITE_API_URL || 'http://192.168.1.18:5000';
+const BASE = import.meta.env.VITE_API_URL ?? '';
 
 export const API = {
   updateProfile: (uid) => `${BASE}/api/profile/${uid}`,

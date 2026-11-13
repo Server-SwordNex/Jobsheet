@@ -9,7 +9,11 @@ export async function loginHandler(req, res) {
     const result = await loginUser(email, password, deviceInfo, ipAddress, role);
     res.status(200).json(result);
   } catch (error) {
-    res.status(error.status || 500).json({ error: error.message || "Internal server error" });
+    const body = { error: error.message || "Internal server error" };
+    // "set up your Jobsheet business" for a shared SwordNex account (see userLoginService)
+    if (error.apiCode) body.code = error.apiCode;
+    if (error.activationToken) body.activationToken = error.activationToken;
+    res.status(error.status || 500).json(body);
   }
 }
 

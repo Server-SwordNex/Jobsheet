@@ -34,6 +34,7 @@ export default class JobsheetModel {
     this.pdfLink = data.pdfLink || "";
     this.pdfStoragePath = data.pdfStoragePath || "";
     this.status = data.status || "initiated";
+    this.monthKey = data.monthKey || "";
     this.createdAt = data.createdAt || Timestamp.now();
     this.updatedAt = data.updatedAt || Timestamp.now();
   }
@@ -72,6 +73,7 @@ export default class JobsheetModel {
       pdfLink: this.pdfLink,
       pdfStoragePath: this.pdfStoragePath,
       status: this.status,
+      monthKey: this.monthKey,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

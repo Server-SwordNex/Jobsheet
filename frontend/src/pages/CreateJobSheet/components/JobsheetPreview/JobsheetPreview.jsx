@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { createJobsheet } from '../../../../api/jobsheets';
 import styles from './JobsheetPreview.module.css';
 
-function JobsheetPreview({ form, cost, discount, additionalCharges, total, generatedBy, generatedById, role, onConfirm }) {
+function JobsheetPreview({ form, cost, discount, additionalCharges, total, generatedBy, generatedById, role, onConfirm, onClose }) {
   const docRef = useRef(null);
   const [pdfUrl, setPdfUrl] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -73,9 +73,10 @@ function JobsheetPreview({ form, cost, discount, additionalCharges, total, gener
       toast.success('Jobsheet created successfully');
       setPdfUrl(pdfUrl);
     } catch (err) {
-      const msg = err?.message || err?.error || 'Failed to create jobsheet';
+      // Stay on the preview so nothing is lost: closing it here would delete the draft
+      // and report success for a jobsheet that was never saved.
+      const msg = err?.error || err?.message || 'Failed to create jobsheet';
       toast.error(msg);
-      onConfirm();
     } finally {
       setGenerating(false);
     }
@@ -209,6 +210,9 @@ function JobsheetPreview({ form, cost, discount, additionalCharges, total, gener
         </div>
 
         <div className={styles.modalFooter}>
+          <button className={styles.backBtn} onClick={onClose} disabled={generating}>
+            Back to edit
+          </button>
           <button className={styles.confirmBtn} onClick={handleConfirm} disabled={generating}>
             {generating ? 'Generating PDF...' : 'Confirm & Submit'}
           </button>

@@ -1,8 +1,11 @@
 import { FieldValue } from "firebase-admin/firestore";
 import bcrypt from "bcryptjs";
 import { usersCollections, subUsersCollection } from "../config/dbCollection.js";
-import { tenantAuth } from "../config/firebaseTenantConfig.js";
+import { newAccountId } from "../config/firebaseTenantConfig.js";
 import { createSubuserModel } from "../models/subuserModel.js";
+import { stripSecrets } from "../middleware/access.js";
+import { assertCanCreateSubuser } from "./planLimitService.js";
+import { findAccountByEmail } from "./accountLookup.js";
 
 export async function createSubuser(parentUid, data) {
   if (!parentUid) {
@@ -11,23 +14,30 @@ export async function createSubuser(parentUid, data) {
     throw error;
   }
 
-  try {
-    await tenantAuth.getUserByEmail(data.email);
+  await assertCanCreateSubuser(parentUid);
+
+  if (!data.email || !data.password || !data.subUserName) {
+    const error = new Error("Name, email and password are required");
+    error.status = 400;
+    throw error;
+  }
+  if (String(data.password).length < 6) {
+    const error = new Error("Password must be at least 6 characters");
+    error.status = 400;
+    throw error;
+  }
+  data = { ...data, email: String(data.email).trim().toLowerCase() };
+
+  // an email may belong to only one Jobsheet account (admin or sub-user)
+  if (await findAccountByEmail(data.email)) {
     const error = new Error("Email already exists");
     error.status = 409;
     throw error;
-  } catch (err) {
-    if (err.status === 409) throw err;
-    if (err.code !== "auth/user-not-found") throw err;
   }
 
-  const userRecord = await tenantAuth.createUser({
-    email: data.email,
-    password: data.password,
-    displayName: data.subUserName,
-  });
-
-  const uid = userRecord.uid;
+  // A team member signs in with a login that belongs to this business only: it is not an
+  // account of the shared SwordNex login, so it never touches another SwordNex app's accounts.
+  const uid = newAccountId();
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
   const subUserData = createSubuserModel({
@@ -61,7 +71,7 @@ export async function createSubuser(parentUid, data) {
 
   return {
     message: "Subuser created successfully",
-    data: { ...subUserData, authUid: uid },
+    data: { ...stripSecrets(subUserData), authUid: uid },
   };
 }
 
@@ -86,12 +96,6 @@ export async function deleteSubuser(subUserUid) {
 
   await docRef.delete();
 
-  try {
-    await tenantAuth.deleteUser(subUserUid);
-  } catch (authErr) {
-    console.warn("Auth user deletion failed:", authErr.message);
-  }
-
   if (parentUid) {
     await usersCollections.doc(parentUid).update({
       currentStaffs: FieldValue.increment(-1),
@@ -113,7 +117,7 @@ export async function getSubusers(parentUid) {
     .where("parentUserId", "==", parentUid)
     .get();
 
-  const data = snapshot.docs.map((doc) => ({ uid: doc.id, ...doc.data() }));
+  const data = snapshot.docs.map((doc) => ({ uid: doc.id, ...stripSecrets(doc.data()) }));
 
   return { data, count: data.length };
 }

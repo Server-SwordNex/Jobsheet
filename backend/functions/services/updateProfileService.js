@@ -1,5 +1,5 @@
 import { Timestamp } from "firebase-admin/firestore";
-import { usersCollections } from "../config/dbCollection.js";
+import { usersCollections, subUsersCollection } from "../config/dbCollection.js";
 
 /* ================= UPDATE PROFILE ================= */
 
@@ -8,7 +8,9 @@ export const updateProfile = async (uid, body) => {
     console.log("\n================ UPDATE PROFILE START ================\n");
 
     if (!uid) {
-      throw new Error("UID is required");
+      const e = new Error("UID is required");
+      e.status = 400;
+      throw e;
     }
 
     const trimmedUID = uid.trim();
@@ -32,7 +34,9 @@ export const updateProfile = async (uid, body) => {
     });
 
     if (Object.keys(updateData).length === 0) {
-      throw new Error("No valid fields to update");
+      const e = new Error("No valid fields to update");
+      e.status = 400;
+      throw e;
     }
 
     updateData.updatedAt = Timestamp.now();
@@ -51,7 +55,16 @@ export const updateProfile = async (uid, body) => {
         userRef = querySnapshot.docs[0].ref;
         existingDoc = await userRef.get();
       } else {
-        throw new Error("User document not found");
+        // a sub-user editing their own profile
+        const subRef = subUsersCollection.doc(trimmedUID);
+        const subSnap = await subRef.get();
+        if (!subSnap.exists) {
+          const notFound = new Error("User document not found");
+          notFound.status = 404;
+          throw notFound;
+        }
+        userRef = subRef;
+        existingDoc = subSnap;
       }
     }
 

@@ -2,8 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: './',
+export default defineConfig(({ mode }) => ({
+  // The desktop (Electron) app loads index.html from disk, so it needs relative paths.
+  // On the web, assets must be absolute: with './' a deep address such as
+  // /superadmin/login asks for /superadmin/assets/... and the page stays blank.
+  base: mode === 'electron' ? './' : '/',
   plugins: [react()],
   build: {
     chunkSizeWarningLimit: 1000,
@@ -20,4 +23,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

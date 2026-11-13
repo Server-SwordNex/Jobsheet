@@ -5,6 +5,7 @@ import {
 
 import styles from "../Settings.module.css";
 
+import { toast } from "react-toastify";
 import { getSubUserPrice } from "../../../api/endpoints";
 
 export default function PurchaseBox() {
@@ -149,6 +150,9 @@ export default function PurchaseBox() {
           styles.buyBtn
         }
         disabled={count === 0}
+        onClick={() =>
+          toast.info("Online purchase isn't available yet. Please contact support to add more sub-users.")
+        }
       >
         Buy Now
       </button>

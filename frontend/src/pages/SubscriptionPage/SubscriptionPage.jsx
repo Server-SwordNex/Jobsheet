@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Check, Sparkles, Shield, Zap, Crown } from 'lucide-react';
 import { getPlans } from '../../api/endpoints';
-import { getItem, setItem } from '../../utils/storage';
+import { getItem } from '../../utils/storage';
+import { useEntitlements } from '../../context/EntitlementsContext';
 import styles from './SubscriptionPage.module.css';
 
 const defaultPlans = [
@@ -104,9 +105,10 @@ const defaultPlans = [
 ];
 
 export default function SubscriptionPage() {
+  const { entitlements } = useEntitlements();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [upgradingId, setUpgradingId] = useState(null);
+  const [upgradingId] = useState(null);
 
   const user = getItem('user') || {};
   const auth = getItem('auth') || {};
@@ -127,23 +129,11 @@ export default function SubscriptionPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Online payment is not set up yet. Do NOT pretend the plan changed: the server is the
+  // source of truth for a user's plan, and nothing here talks to it.
   const handleSelectPlan = (plan) => {
-    const isCurrent = isPlanCurrent(plan);
-    if (isCurrent) return;
-
-    setUpgradingId(plan._id || plan.id);
-    setTimeout(() => {
-      // Update local user state
-      const updatedUser = {
-        ...user,
-        plan: plan.name,
-        planName: plan.name,
-        billingType: plan.billingType,
-      };
-      setItem('user', updatedUser);
-      setUpgradingId(null);
-      toast.success(`Subscription successfully updated to ${plan.name}!`);
-    }, 400);
+    if (isPlanCurrent(plan)) return;
+    toast.info(`Online upgrades aren't available yet. Please contact support to switch to ${plan.name}.`);
   };
 
   const isPlanCurrent = (plan) => {
@@ -157,6 +147,21 @@ export default function SubscriptionPage() {
     if (plan.billingType === 'monthly') return <Zap size={14} />;
     return <Shield size={14} />;
   };
+
+  if (entitlements && entitlements.pricingEnabled === false) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div>
+            <h1 className={styles.title}>Jobsheet is free right now</h1>
+            <p className={styles.subtitle}>
+              Every feature is included and nothing is limited. There is no plan to buy and no payment to make.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

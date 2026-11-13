@@ -42,7 +42,8 @@ function CreateJobSheet() {
   const [previewOpen, setPreviewOpen] = useState(false);
 
   useEffect(() => {
-    getTechniciansByUser(user.uid || user.id).then(setTechnicians).catch(() => {});
+    // a sub-user works with their parent business's technicians
+    getTechniciansByUser(user.parentUserId || user.uid || user.id).then(setTechnicians).catch(() => {});
   }, []);
 
   const allDrafts = getItem(DRAFTS_KEY) || [];

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import iconLogo from '../../assets/jobsheet-icon.png';
 import { getItem } from '../../utils/storage';
+import { useHasFeature } from '../../context/EntitlementsContext';
 import styles from './Sidebar.module.css';
 
 const navItems = [
@@ -30,9 +31,10 @@ function Sidebar({ collapsed }) {
   const user = getItem('user') || {};
   const auth = getItem('auth') || {};
   const role = user.role || auth.role || '';
+  const hasReports = useHasFeature('reports');
 
   const filteredNavItems = navItems.filter((item) => {
-    if (item.path === '/reports' && role === 'team') {
+    if (item.path === '/reports' && (role === 'team' || !hasReports)) {
       return false;
     }
     return true;

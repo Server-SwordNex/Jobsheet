@@ -1,0 +1,803 @@
+/* Shared look of the sign-in / sign-up pages (same layout family as SwordNex Billing and Payroll):
+   a scrolling form column on the left and a fixed brand panel on the right. */
+
+.shell {
+  --accent: #9333ea;
+  --accent-dark: #7e22ce;
+  --accent-soft: #faf5ff;
+  --ink: #14213d;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --danger: #dc2626;
+
+  /* #root is a flex container and <body> has overflow hidden, so the shell fills the window itself
+     and the form column does the scrolling */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  color: var(--ink);
+  background: #fff;
+}
+
+/* ---------- form column ---------- */
+
+.formSide {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 28px clamp(24px, 6vw, 72px) 20px;
+  /* the column still scrolls with the wheel or touch when a form is taller than the window,
+     but no scrollbar is drawn */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.formSide::-webkit-scrollbar {
+  display: none;
+}
+
+.formInner {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  flex: 1;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 36px;
+  text-decoration: none;
+  color: var(--ink);
+}
+
+.logo img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.logoText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+  font-size: 15px;
+}
+
+.logoText strong {
+  font-size: 17px;
+}
+
+.title {
+  margin: 0 0 6px;
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0 0 26px;
+  color: var(--muted);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.footer {
+  max-width: 520px;
+  width: 100%;
+  margin: 28px auto 0;
+  padding-top: 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.switchLine {
+  margin: 18px 0 0;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.link {
+  color: var(--accent-dark);
+  font-weight: 700;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-size: inherit;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- form controls ---------- */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.req {
+  color: var(--danger);
+}
+
+.inputWrap {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.input,
+.select {
+  width: 100%;
+  box-sizing: border-box;
+  height: 46px;
+  padding: 0 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  font-size: 14.5px;
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.hasIcon {
+  padding-left: 40px;
+}
+
+.hasEye {
+  padding-right: 44px;
+}
+
+.input::placeholder {
+  color: #a3aebf;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(147, 51, 234, 0.14);
+}
+
+.invalid {
+  border-color: var(--danger);
+}
+
+.errorText {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--danger);
+}
+
+.eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: none;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.eye:hover {
+  color: var(--ink);
+  background: #f1f5f9;
+}
+
+.section {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0 -2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #1e293b;
+}
+
+.section small {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 13px;
+  color: #475569;
+  cursor: pointer;
+}
+
+.check input {
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.rules li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rules .ok {
+  color: #16a34a;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accent-dark);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btnGhost:hover {
+  background: #f8fafc;
+}
+
+.spin {
+  animation: authspin 0.8s linear infinite;
+}
+
+@keyframes authspin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* ---------- alert ---------- */
+
+.alert {
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.notice {
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: #581c87;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+/* ---------- segmented switch (Business / Super admin) ---------- */
+
+.segment {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  background: #f1f5f9;
+}
+
+.segment button {
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segment .active {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+/* ---------- OTP dialog ---------- */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.dialog {
+  width: 100%;
+  max-width: 420px;
+  padding: 28px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.3);
+}
+
+.dialog h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+}
+
+.dialog p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.otp {
+  text-align: center;
+  letter-spacing: 0.5em;
+  font-size: 22px;
+  font-weight: 700;
+  padding-left: 0.5em;
+}
+
+/* ---------- brand panel (fixed while the form scrolls) ---------- */
+
+.panel {
+  position: relative;
+  height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+  padding: 48px clamp(28px, 4.5vw, 64px);
+  color: #fff;
+  background: linear-gradient(150deg, #3b0764 0%, #7e22ce 42%, #9333ea 100%);
+}
+
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(circle at 70% 30%, #000 0%, transparent 75%);
+  pointer-events: none;
+}
+
+.panel > * {
+  position: relative;
+}
+
+.panelTitle {
+  margin: 0;
+  max-width: 440px;
+  font-size: clamp(28px, 3.2vw, 42px);
+  line-height: 1.12;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.panelText {
+  margin: 12px 0 0;
+  max-width: 420px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.mock {
+  max-width: 440px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.28);
+}
+
+.mockHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.mockHead small {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #94a3b8;
+}
+
+.mockHead strong {
+  font-size: 17px;
+}
+
+.paid {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.mockRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+.mockRow span:last-child {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.mockTotal {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  max-width: 460px;
+}
+
+.feature {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+}
+
+.featureIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.feature strong {
+  display: block;
+  font-size: 13.5px;
+  margin-bottom: 2px;
+}
+
+.feature span {
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* ---------- shorter windows: tighter spacing so the sign-in form fits without scrolling ---------- */
+
+@media (max-height: 940px) {
+  .formSide {
+    padding-top: 18px;
+    padding-bottom: 12px;
+  }
+  .logo {
+    margin-bottom: 20px;
+  }
+  .subtitle {
+    margin-bottom: 18px;
+  }
+  .segment {
+    margin-bottom: 14px;
+  }
+  .form {
+    gap: 13px;
+  }
+  .footer {
+    margin-top: 12px;
+    padding-top: 8px;
+  }
+}
+
+/* ---------- short windows: tighten the brand panel so nothing is cut off ---------- */
+
+@media (max-height: 780px) {
+  .panel {
+    gap: 18px;
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+  .features {
+    display: none;
+  }
+}
+
+/* ---------- small screens: the brand panel steps aside ---------- */
+
+@media (max-width: 960px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+  .panel {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+  .title {
+    font-size: 26px;
+  }
+}
+
+/* ---------- job sheet lookup result (public search page) ---------- */
+
+.result {
+  margin-top: 22px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--accent-soft);
+}
+
+.resultHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.resultHead small {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.resultHead strong {
+  font-size: 18px;
+}
+
+.statusBadge {
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.stInitiated {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.stProgress {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.stDone {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.stCancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.resultRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+  font-size: 14px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.resultRow span:first-child {
+  color: var(--muted);
+}
+
+.resultRow span:last-child {
+  font-weight: 600;
+  text-align: right;
+}
+
+.resultNote {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.resultTotal {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+/* ---------- Register: step indicator ---------- */
+
+.steps {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+
+.step {
+  flex: 1;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--line);
+}
+
+.step.stepDone {
+  background: var(--accent);
+}
+
+.stepLabel {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+/* the app's global h1/h2 style sets a dark colour: headings here take their colour from their container */
+.shell h1,
+.shell h2 {
+  color: inherit;
+  font-family: inherit;
+}
+
+/* the source design relies on a global border-box reset */
+.shell,
+.shell *,
+.shell *::before,
+.shell *::after {
+  box-sizing: border-box;
+}

@@ -3,6 +3,8 @@ import { PanelLeft, Megaphone, LogOut, CreditCard } from 'lucide-react';
 import { getItem, removeItem } from '../../utils/storage';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../../api/auth';
+import { getAnnouncementsByRole } from '../../api/endpoints';
+import { useEntitlements } from '../../context/EntitlementsContext';
 import styles from './Topbar.module.css';
 
 function Topbar({ onToggleSidebar }) {
@@ -10,6 +12,19 @@ function Topbar({ onToggleSidebar }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
+  const [announcements, setAnnouncements] = useState([]);
+  const [annOpen, setAnnOpen] = useState(false);
+  const [seenIds, setSeenIds] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('seenAnnouncements') || '[]');
+    } catch {
+      return [];
+    }
+  });
+  const annRef = useRef(null);
+
+  const { entitlements } = useEntitlements();
+  const pricingOn = entitlements ? entitlements.pricingEnabled !== false : true;
   const user = getItem('user');
   const auth = getItem('auth');
   const displayName = user?.username || auth?.email || 'User';
@@ -18,8 +33,33 @@ function Topbar({ onToggleSidebar }) {
   const initial = displayName.charAt(0).toUpperCase();
 
   useEffect(() => {
+    // the server decides which announcements this account may see
+    getAnnouncementsByRole()
+      .then((res) => setAnnouncements(Array.isArray(res?.data) ? res.data : []))
+      .catch(() => setAnnouncements([]));
+  }, []);
+
+  const unreadCount = announcements.filter((a) => !seenIds.includes(a.id)).length;
+
+  const toggleAnnouncements = () => {
+    const next = !annOpen;
+    setAnnOpen(next);
+    setOpen(false);
+    if (next && announcements.length) {
+      const ids = announcements.map((a) => a.id);
+      setSeenIds(ids);
+      try {
+        localStorage.setItem('seenAnnouncements', JSON.stringify(ids));
+      } catch {
+        // storage unavailable: unread badge just won't persist
+      }
+    }
+  };
+
+  useEffect(() => {
     const handleClick = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (annRef.current && !annRef.current.contains(e.target)) setAnnOpen(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -49,9 +89,27 @@ function Topbar({ onToggleSidebar }) {
         </button>
       </div>
       <div className={styles.right}>
-        <button className={styles.iconBtn} aria-label="Announcements">
-          <Megaphone size={18} />
-        </button>
+        <div className={styles.annWrap} ref={annRef}>
+          <button className={styles.iconBtn} aria-label="Announcements" onClick={toggleAnnouncements}>
+            <Megaphone size={18} />
+            {unreadCount > 0 && <span className={styles.annBadge}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
+          </button>
+          {annOpen && (
+            <div className={styles.annPanel}>
+              <div className={styles.annTitle}>Announcements</div>
+              {announcements.length === 0 ? (
+                <div className={styles.annEmpty}>No announcements right now.</div>
+              ) : (
+                announcements.map((a) => (
+                  <div key={a.id} className={styles.annItem}>
+                    <div className={styles.annItemTitle}>{a.title}</div>
+                    <div className={styles.annItemMsg}>{a.message}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
         <div className={styles.userInfo} ref={ref}>
           <button className={styles.avatar} onClick={() => setOpen(!open)}>
             {initial}
@@ -73,16 +131,18 @@ function Topbar({ onToggleSidebar }) {
                 <LogOut size={15} />
                 Sign Out
               </button>
-              <button
-                className={styles.dropdownItem}
-                onClick={() => {
-                  setOpen(false);
-                  navigate('/subscription');
-                }}
-              >
-                <CreditCard size={15} />
-                Subscription
-              </button>
+              {pricingOn && (
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    setOpen(false);
+                    navigate('/subscription');
+                  }}
+                >
+                  <CreditCard size={15} />
+                  Subscription
+                </button>
+              )}
             </div>
           )}
         </div>

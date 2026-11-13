@@ -1,63 +1,98 @@
-import { useNavigate, NavLink, Outlet, Link } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
-import { removeItem, getItem } from '../../../utils/storage';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Gauge, Layers, Megaphone, LifeBuoy, ExternalLink, LogOut, Moon, Sun } from 'lucide-react';
+import { getItem, removeItem } from '../../../utils/storage';
+import { getAllSupportTickets } from '../../../api/support';
 import iconLogo from '../../../assets/jobsheet-icon.png';
-import styles from './SuperAdminLayout.module.css';
+import c from '../console/console.module.css';
+import { useConsoleTheme } from '../console/useConsoleTheme';
 
-const navLinks = [
-  { label: 'Dashboard', path: '/superadmin/dashboard' },
-  { label: 'Plan', path: '/superadmin/plans' },
-  { label: 'Announcement', path: '/superadmin/announcements' },
-  { label: 'Support Tickets', path: '/superadmin/tickets' },
+/* the other SwordNex consoles (same shared super admin login) */
+const LINKS = [
+  { label: 'Invoice console', href: 'https://invoices.swordnex.com/superadmin/login' },
+  { label: 'Billing console', href: 'https://swordnex-billing-app.web.app/superadmin/login' },
+  { label: 'Payroll console', href: 'https://swordnex-payroll-app.web.app/superadmin/login' },
+  { label: 'Products portal', href: 'https://productsswordnex.web.app/superadmin/login' },
 ];
+
+const item = ({ isActive }) => `${c.navItem} ${isActive ? c.active : ''}`;
 
 function SuperAdminLayout() {
   const navigate = useNavigate();
-  const auth = getItem('auth');
+  const { theme, isDark, toggle } = useConsoleTheme();
+  const [openTickets, setOpenTickets] = useState(0);
 
-  const handleLogout = () => {
+  const email = getItem('user')?.email || getItem('auth')?.email || 'Super admin';
+
+  useEffect(() => {
+    getAllSupportTickets()
+      .then((tickets) => setOpenTickets((tickets || []).filter((t) => t.status === 'OPEN').length))
+      .catch(() => {});
+  }, []);
+
+  const signOut = () => {
     removeItem('token');
     removeItem('auth');
-    navigate('/login');
+    removeItem('user');
+    navigate('/superadmin/login', { replace: true });
   };
 
   return (
-    <div className={styles.layout}>
-      <header className={styles.topbar}>
-        <Link to="/superadmin/dashboard" className={styles.topbarLeft} aria-label="Go to Super Admin Dashboard">
-          <img src={iconLogo} alt="SwordNex" className={styles.logoImg} />
-          <span className={styles.logoText}>SwordNex</span>
-        </Link>
-        <div className={styles.topbarRight}>
-          <div className={styles.userInfo}>
-            <div className={styles.avatar}>
-              <User size={16} />
-            </div>
-            <span className={styles.userEmail}>{auth?.email || 'Super Admin'}</span>
+    <div className={c.sa} data-theme={theme}>
+      <aside className={c.side}>
+        <div className={c.brand}>
+          <img src={iconLogo} alt="" />
+          <div>
+            <strong>SwordNex Jobsheet</strong>
+            <small>Super admin</small>
           </div>
-          <button className={styles.logoutBtn} onClick={handleLogout} aria-label="Logout">
-            <LogOut size={18} />
-            <span>Logout</span>
+        </div>
+
+        <nav className={c.nav}>
+          <NavLink to="/superadmin/dashboard" className={item}>
+            <Gauge size={17} /> <span className={c.grow}>Overview</span>
+          </NavLink>
+
+          <div className={c.navGroup}>Manage</div>
+          <NavLink to="/superadmin/plans" className={item}>
+            <Layers size={17} /> <span className={c.grow}>Plans &amp; pricing</span>
+          </NavLink>
+          <NavLink to="/superadmin/announcements" className={item}>
+            <Megaphone size={17} /> <span className={c.grow}>Announcements</span>
+          </NavLink>
+          <NavLink to="/superadmin/tickets" className={item}>
+            <LifeBuoy size={17} /> <span className={c.grow}>Support tickets</span>
+            {openTickets > 0 && <span className={`${c.pill} ${c.pillHot}`}>{openTickets}</span>}
+          </NavLink>
+
+          <div className={c.navGroup}>Other consoles</div>
+          {LINKS.map((l) => (
+            <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className={c.navItem}>
+              <ExternalLink size={16} /> <span className={c.grow}>{l.label}</span>
+            </a>
+          ))}
+        </nav>
+
+        <div className={c.sideFoot}>
+          <span className={c.who} title={email}>
+            {email}
+          </span>
+          <button
+            type="button"
+            className={c.iconBtn}
+            onClick={toggle}
+            aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+            title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+          >
+            {isDark ? <Sun size={17} /> : <Moon size={17} />}
+          </button>
+          <button type="button" className={c.iconBtn} onClick={signOut} aria-label="Sign out" title="Sign out">
+            <LogOut size={17} />
           </button>
         </div>
-      </header>
+      </aside>
 
-      <nav className={styles.nav}>
-        {navLinks.map((link) => (
-          <NavLink
-            key={link.path}
-            to={link.path}
-            end={link.path === '/superadmin/dashboard'}
-            className={({ isActive }) =>
-              `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`
-            }
-          >
-            {link.label}
-          </NavLink>
-        ))}
-      </nav>
-
-      <main className={styles.content}>
+      <main className={c.main}>
         <Outlet />
       </main>
     </div>

@@ -1,0 +1,13 @@
+/* Purple accent for the public pages (Search, Sign in, Register, Pricing).
+   The logged-in app keeps the brand red from colors.css; only elements inside
+   .publicTheme get these values. */
+.publicTheme {
+  --accent: #9333ea;
+  --accent-hover: #7e22ce;
+  --accent-light: #c084fc;
+  --accent-soft: #faf5ff;
+
+  --accent-rgb: 147, 51, 234;
+  --accent-hover-rgb: 126, 34, 206;
+  --accent-light-rgb: 192, 132, 252;
+}

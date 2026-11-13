@@ -6,6 +6,8 @@ export const createSubuserModel = (data) => {
     parentUserId: data.parentUserId || "",
     role: data.role || "team",
     empId: data.empId || "",
+    // login looks sub-users up by email, so it has to be stored
+    email: data.email ? String(data.email).trim().toLowerCase() : "",
     password: data.password || "",
 
     jobSheetGenerated: Number(data.jobSheetGenerated || 0),

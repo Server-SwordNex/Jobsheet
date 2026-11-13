@@ -250,6 +250,23 @@
   flex-shrink: 0;
 }
 
+.backBtn {
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid rgba(var(--dark-rgb), 0.15);
+  border-radius: 8px;
+  color: var(--dark);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.backBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .confirmBtn {
   padding: 10px 24px;
   background: var(--accent);

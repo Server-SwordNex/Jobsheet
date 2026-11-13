@@ -1,4 +1,5 @@
 import { jobsheetsCollections, subUsersCollection } from "../config/dbCollection.js";
+import { stripSecrets } from "../middleware/access.js";
 
 /* =========================================================================
    GET SUBUSER RECORDS + STATS
@@ -22,7 +23,7 @@ export const getAdminSubuserRecordsService = async (uid, subuserName = "") => {
 
     const subusers = subusersSnapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
+      ...stripSecrets(doc.data()),
     }));
 
     console.log(`✅ ${subusers.length} subusers found`);

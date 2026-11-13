@@ -7,7 +7,7 @@ const sendMail = async ({
   html,
 }) => {
   await transporter.sendMail({
-    from: `"SwordNex JobSheet" <${config.emailUser}>`,
+    from: `"${config.senderName}" <${config.senderEmail}>`,
     to,
     subject,
     html,

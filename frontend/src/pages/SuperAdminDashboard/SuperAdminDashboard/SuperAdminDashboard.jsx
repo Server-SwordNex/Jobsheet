@@ -1,648 +1,329 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Wrench, 
-  FileText, 
-  Ticket, 
-  Search, 
-  X, 
-  ExternalLink, 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Globe, 
-  FileCheck, 
-  Calendar, 
-  ChevronRight, 
-  ShieldAlert, 
-  Layers 
-} from 'lucide-react';
-import { toast } from 'react-toastify';
+import { useMemo, useState } from 'react';
+import { Users, Wrench, FileText, LifeBuoy, Building2, CheckCircle2, Clock, Search, ExternalLink } from 'lucide-react';
 import { getSuperAdminUsersDetails } from '../../../api/endpoints';
-import styles from './SuperAdminDashboard.module.css';
+import c from '../console/console.module.css';
+import { useApi, formatDate, rupees } from '../console/helpers';
+import { PageHeader, Card, StatCard, Badge, Loading, ErrorNotice, Empty, Drawer } from '../console/ui';
+
+const TABS = ['overview', 'subusers', 'technicians', 'jobsheets', 'tickets'];
+const TAB_LABEL = { overview: 'Overview', subusers: 'Sub-users', technicians: 'Technicians', jobsheets: 'Job sheets', tickets: 'Tickets' };
+
+const statusOf = (u) => u.subscriptionStatus || 'ACTIVE';
 
 export default function SuperAdminDashboard() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [planFilter, setPlanFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const { data, error, loading, reload } = useApi(getSuperAdminUsersDetails);
+  const [selected, setSelected] = useState(null);
+  const [tab, setTab] = useState('overview');
+  const [search, setSearch] = useState('');
+  const [plan, setPlan] = useState('all');
+  const [status, setStatus] = useState('all');
 
-  useEffect(() => {
-    fetchUsersDetails();
-  }, []);
+  const users = useMemo(() => data || [], [data]);
 
-  const fetchUsersDetails = async () => {
-    try {
-      setLoading(true);
-      const data = await getSuperAdminUsersDetails();
-      setUsers(data || []);
-    } catch (err) {
-      console.error(err);
-      toast.error(err.error || err.message || 'Failed to load user details');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const stats = useMemo(() => {
+    const sum = (key) => users.reduce((n, u) => n + (u[key]?.length || 0), 0);
+    return {
+      businesses: users.length,
+      active: users.filter((u) => statusOf(u) === 'ACTIVE').length,
+      expired: users.filter((u) => statusOf(u) === 'EXPIRED').length,
+      subusers: sum('subusers'),
+      technicians: sum('technicians'),
+      jobsheets: sum('jobsheets'),
+      openTickets: users.reduce((n, u) => n + (u.tickets?.filter((t) => t.status === 'OPEN').length || 0), 0),
+    };
+  }, [users]);
 
-  // Helper: format dates
-  const formatDate = (val) => {
-    if (!val) return 'N/A';
-    if (val._seconds) {
-      return new Date(val._seconds * 1000).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    }
-    if (val.seconds) {
-      return new Date(val.seconds * 1000).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      });
-    }
-    return new Date(val).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
+  const plansList = useMemo(() => ['all', ...new Set(users.map((u) => u.plan).filter(Boolean))], [users]);
 
-  // Metrics calculation
-  const totalUsers = users.length;
-  const totalSubUsers = users.reduce((acc, u) => acc + (u.subusers?.length || 0), 0);
-  const totalTechnicians = users.reduce((acc, u) => acc + (u.technicians?.length || 0), 0);
-  const totalJobsheets = users.reduce((acc, u) => acc + (u.jobsheets?.length || 0), 0);
-  const activeTickets = users.reduce(
-    (acc, u) => acc + (u.tickets?.filter((t) => t.status !== 'CLOSED').length || 0),
-    0
-  );
-
-  // Dynamic lists of plans for filtering
-  const plansList = ['all', ...new Set(users.map((u) => u.plan).filter(Boolean))];
-
-  // Filtering users
-  const filteredUsers = users.filter((u) => {
-    const searchLower = searchQuery.toLowerCase();
+  const shown = users.filter((u) => {
+    const q = search.trim().toLowerCase();
     const matchSearch =
-      (u.companyName || '').toLowerCase().includes(searchLower) ||
-      (u.username || '').toLowerCase().includes(searchLower) ||
-      (u.email || '').toLowerCase().includes(searchLower);
-
-    const matchPlan = planFilter === 'all' || u.plan === planFilter;
-    
-    const status = u.subscriptionStatus || 'ACTIVE';
-    const matchStatus = statusFilter === 'all' || status === statusFilter;
-
-    return matchSearch && matchPlan && matchStatus;
+      !q ||
+      (u.companyName || '').toLowerCase().includes(q) ||
+      (u.username || '').toLowerCase().includes(q) ||
+      (u.email || '').toLowerCase().includes(q);
+    return matchSearch && (plan === 'all' || u.plan === plan) && (status === 'all' || statusOf(u) === status);
   });
 
-  const handleOpenDetails = (user) => {
-    setSelectedUser(user);
-    setActiveTab('overview');
+  const open = (u) => {
+    setSelected(u);
+    setTab('overview');
   };
 
-  const handleCloseDetails = () => {
-    setSelectedUser(null);
-  };
+  if (loading && !data) return <div className={c.page}><Loading text="Loading businesses..." /></div>;
+  if (error) return <div className={c.page}><ErrorNotice message={error} onRetry={reload} /></div>;
+
+  const u = selected;
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.heading}>Super Admin Dashboard</h1>
-          <p className={styles.subtitle}>Complete overview and details of all registered users and their activity.</p>
-        </div>
-        <button className={styles.refreshBtn} onClick={fetchUsersDetails} disabled={loading}>
-          {loading ? 'Refreshing...' : 'Refresh Data'}
-        </button>
+    <div className={c.page}>
+      <PageHeader
+        title="Overview"
+        subtitle="Everything happening across SwordNex Jobsheet."
+        actions={
+          <button className={`${c.btn} ${c.ghost}`} onClick={reload} disabled={loading}>
+            {loading ? 'Refreshing...' : 'Refresh'}
+          </button>
+        }
+      />
+
+      <div className={c.stats}>
+        <StatCard label="Businesses" value={stats.businesses} icon={Building2} />
+        <StatCard label="Active plans" value={stats.active} icon={CheckCircle2} tone="ok" />
+        <StatCard label="Expired" value={stats.expired} icon={Clock} tone="bad" />
+        <StatCard label="Team members" value={stats.subusers} icon={Users} tone="info" />
+        <StatCard label="Technicians" value={stats.technicians} icon={Wrench} />
+        <StatCard label="Job sheets created" value={stats.jobsheets} icon={FileText} />
+        <StatCard label="Open tickets" value={stats.openTickets} icon={LifeBuoy} tone={stats.openTickets ? 'bad' : ''} />
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className={styles.statsGrid}>
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Total Users</span>
-            <div className={`${styles.iconBg} ${styles.blue}`}>
-              <Users size={20} />
-            </div>
+      <Card title="Businesses" note={`${shown.length} of ${users.length}`}>
+        <div className={c.toolbar}>
+          <div className={c.search}>
+            <Search size={16} />
+            <input className={c.input} style={{ paddingLeft: 34 }} placeholder="Search company, contact or email" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <div className={styles.cardValue}>{totalUsers}</div>
-          <div className={styles.cardSub}>Registrations</div>
+          <select className={c.select} value={plan} onChange={(e) => setPlan(e.target.value)} aria-label="Plan">
+            {plansList.map((p) => (
+              <option key={p} value={p}>
+                {p === 'all' ? 'All plans' : p}
+              </option>
+            ))}
+          </select>
+          <select className={c.select} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
+            <option value="all">All statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="EXPIRED">Expired</option>
+          </select>
         </div>
 
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Sub-Users</span>
-            <div className={`${styles.iconBg} ${styles.purple}`}>
-              <Users size={20} />
-            </div>
-          </div>
-          <div className={styles.cardValue}>{totalSubUsers}</div>
-          <div className={styles.cardSub}>Staff & Employees</div>
-        </div>
-
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Technicians</span>
-            <div className={`${styles.iconBg} ${styles.green}`}>
-              <Wrench size={20} />
-            </div>
-          </div>
-          <div className={styles.cardValue}>{totalTechnicians}</div>
-          <div className={styles.cardSub}>Field Workers</div>
-        </div>
-
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Jobsheets</span>
-            <div className={`${styles.iconBg} ${styles.amber}`}>
-              <FileText size={20} />
-            </div>
-          </div>
-          <div className={styles.cardValue}>{totalJobsheets}</div>
-          <div className={styles.cardSub}>Total Generated</div>
-        </div>
-
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <span className={styles.cardTitle}>Active Tickets</span>
-            <div className={`${styles.iconBg} ${styles.red}`}>
-              <Ticket size={20} />
-            </div>
-          </div>
-          <div className={styles.cardValue}>{activeTickets}</div>
-          <div className={styles.cardSub}>Requires Attention</div>
-        </div>
-      </div>
-
-      {/* Search & Filters */}
-      <div className={styles.filterSection}>
-        <div className={styles.searchWrapper}>
-          <Search className={styles.searchIcon} size={18} />
-          <input 
-            type="text" 
-            placeholder="Search by company name, username, or email..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={styles.searchInput}
-          />
-        </div>
-        <div className={styles.filtersGroup}>
-          <div className={styles.selectWrapper}>
-            <label>Plan:</label>
-            <select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)}>
-              {plansList.map((plan) => (
-                <option key={plan} value={plan}>
-                  {plan.charAt(0).toUpperCase() + plan.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className={styles.selectWrapper}>
-            <label>Status:</label>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-              <option value="all">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="EXPIRED">Expired</option>
-              <option value="INACTIVE">Inactive</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Users Table */}
-      <div className={styles.tableWrapper}>
-        {loading ? (
-          <div className={styles.loadingState}>
-            <div className={styles.spinner}></div>
-            <p>Loading aggregated user details...</p>
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <div className={styles.emptyState}>
-            <p>No users match the criteria.</p>
-          </div>
+        {shown.length === 0 ? (
+          <Empty>{users.length === 0 ? 'No businesses have registered yet.' : 'No businesses match these filters.'}</Empty>
         ) : (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Company</th>
-                <th>Primary Contact</th>
-                <th>Plan & Status</th>
-                <th>Metrics Summary</th>
-                <th>Created At</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.uid} className={styles.tableRow} onClick={() => handleOpenDetails(user)}>
-                  <td>
-                    <div className={styles.companyName}>{user.companyName || 'No Company Name'}</div>
-                    <div className={styles.website}>
-                      {user.website ? (
-                        <a href={user.website.startsWith('http') ? user.website : `https://${user.website}`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                          {user.website} <ExternalLink size={12} />
-                        </a>
-                      ) : (
-                        'No Website'
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div className={styles.contactName}>{user.username || 'N/A'}</div>
-                    <div className={styles.contactEmail}>{user.email}</div>
-                  </td>
-                  <td>
-                    <div className={styles.badgeGroup}>
-                      <span className={`${styles.badgePlan} ${styles[user.plan?.toLowerCase() || 'free']}`}>
-                        {user.plan || 'Free'}
-                      </span>
-                      <span className={`${styles.badgeStatus} ${styles[(user.subscriptionStatus || 'ACTIVE').toLowerCase()]}`}>
-                        {user.subscriptionStatus || 'ACTIVE'}
-                      </span>
-                    </div>
-                  </td>
-                  <td>
-                    <div className={styles.metricsGrid}>
-                      <div className={styles.metricItem} title="Sub-users (Staff)">
-                        <Users size={12} /> <span>{user.subusers?.length || 0}</span>
-                      </div>
-                      <div className={styles.metricItem} title="Technicians">
-                        <Wrench size={12} /> <span>{user.technicians?.length || 0}</span>
-                      </div>
-                      <div className={styles.metricItem} title="Jobsheets">
-                        <FileText size={12} /> <span>{user.jobsheets?.length || 0}</span>
-                      </div>
-                      <div className={styles.metricItem} title="Support Tickets">
-                        <Ticket size={12} /> <span>{user.tickets?.length || 0}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className={styles.createdCol}>
-                    {formatDate(user.createdAt)}
-                  </td>
-                  <td>
-                    <button className={styles.viewBtn} onClick={(e) => { e.stopPropagation(); handleOpenDetails(user); }}>
-                      View Details <ChevronRight size={16} />
-                    </button>
-                  </td>
+          <div className={c.tableWrap}>
+            <table className={c.table}>
+              <thead>
+                <tr>
+                  <th>Business</th>
+                  <th>Contact</th>
+                  <th>Plan</th>
+                  <th>Status</th>
+                  <th className={c.num}>Team</th>
+                  <th className={c.num}>Technicians</th>
+                  <th className={c.num}>Job sheets</th>
+                  <th>Joined</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
-      {/* User Details Sidebar (Drawer) */}
-      {selectedUser && (
-        <>
-          <div className={styles.overlay} onClick={handleCloseDetails}></div>
-          <div className={styles.drawer}>
-            <div className={styles.drawerHeader}>
-              <div>
-                <h2 className={styles.drawerTitle}>{selectedUser.companyName || 'No Company Name'}</h2>
-                <p className={styles.drawerSubtitle}>{selectedUser.email}</p>
-              </div>
-              <button className={styles.closeBtn} onClick={handleCloseDetails} aria-label="Close panel">
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Navigation Tabs */}
-            <div className={styles.drawerTabs}>
-              <button 
-                className={`${styles.tabBtn} ${activeTab === 'overview' ? styles.tabBtnActive : ''}`} 
-                onClick={() => setActiveTab('overview')}
-              >
-                Overview
-              </button>
-              <button 
-                className={`${styles.tabBtn} ${activeTab === 'subusers' ? styles.tabBtnActive : ''}`} 
-                onClick={() => setActiveTab('subusers')}
-              >
-                Sub-Users ({selectedUser.subusers?.length || 0})
-              </button>
-              <button 
-                className={`${styles.tabBtn} ${activeTab === 'technicians' ? styles.tabBtnActive : ''}`} 
-                onClick={() => setActiveTab('technicians')}
-              >
-                Technicians ({selectedUser.technicians?.length || 0})
-              </button>
-              <button 
-                className={`${styles.tabBtn} ${activeTab === 'jobsheets' ? styles.tabBtnActive : ''}`} 
-                onClick={() => setActiveTab('jobsheets')}
-              >
-                Jobsheets ({selectedUser.jobsheets?.length || 0})
-              </button>
-              <button 
-                className={`${styles.tabBtn} ${activeTab === 'tickets' ? styles.tabBtnActive : ''}`} 
-                onClick={() => setActiveTab('tickets')}
-              >
-                Tickets ({selectedUser.tickets?.length || 0})
-              </button>
-            </div>
-
-            {/* Tab Contents */}
-            <div className={styles.drawerContent}>
-              
-              {/* OVERVIEW TAB */}
-              {activeTab === 'overview' && (
-                <div className={styles.tabPane}>
-                  <div className={styles.sectionHeader}>
-                    <User size={18} /> <span>Account Profile</span>
-                  </div>
-                  <div className={styles.detailGrid}>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Username</span>
-                      <span className={styles.detailValue}>{selectedUser.username || 'N/A'}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Email Address</span>
-                      <span className={styles.detailValue}>{selectedUser.email}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Mobile Number</span>
-                      <span className={styles.detailValue}>{selectedUser.mobileNo || 'N/A'}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>GSTIN</span>
-                      <span className={styles.detailValue}>{selectedUser.gstin || 'N/A'}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Verification Status</span>
-                      <span className={`${styles.detailValue} ${selectedUser.isVerified ? styles.verified : styles.unverified}`}>
-                        {selectedUser.isVerified ? 'Verified' : 'Pending Verification'}
-                      </span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Registration Date</span>
-                      <span className={styles.detailValue}>{formatDate(selectedUser.createdAt)}</span>
-                    </div>
-                  </div>
-
-                  <div className={styles.divider}></div>
-
-                  <div className={styles.sectionHeader}>
-                    <MapPin size={18} /> <span>Business Address</span>
-                  </div>
-                  <div className={styles.detailGrid}>
-                    <div className={styles.detailItemFull}>
-                      <span className={styles.detailLabel}>Address Line 1</span>
-                      <span className={styles.detailValue}>{selectedUser.addressLine1 || 'N/A'}</span>
-                    </div>
-                    <div className={styles.detailItemFull}>
-                      <span className={styles.detailLabel}>Address Line 2</span>
-                      <span className={styles.detailValue}>{selectedUser.addressLine2 || 'N/A'}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>City</span>
-                      <span className={styles.detailValue}>{selectedUser.city || 'N/A'}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>State</span>
-                      <span className={styles.detailValue}>{selectedUser.state || 'N/A'}</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Pincode</span>
-                      <span className={styles.detailValue}>{selectedUser.pincode || 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  <div className={styles.divider}></div>
-
-                  <div className={styles.sectionHeader}>
-                    <Layers size={18} /> <span>Plan & Licensing</span>
-                  </div>
-                  <div className={styles.detailGrid}>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Current Plan</span>
-                      <span className={`${styles.badgePlan} ${styles[selectedUser.plan?.toLowerCase() || 'free']}`}>
-                        {selectedUser.plan || 'Free'}
-                      </span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Plan Cost</span>
-                      <span className={styles.detailValue}>₹{selectedUser.planPrice || 0} ({selectedUser.billingType || 'monthly'})</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Subscription Status</span>
-                      <span className={`${styles.badgeStatus} ${styles[(selectedUser.subscriptionStatus || 'ACTIVE').toLowerCase()]}`}>
-                        {selectedUser.subscriptionStatus || 'ACTIVE'}
-                      </span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Jobsheet Creation Limit</span>
-                      <span className={styles.detailValue}>{selectedUser.jobSheetLimit === 0 || selectedUser.jobSheetLimit === 'unlimited' ? 'Unlimited' : selectedUser.jobSheetLimit} ({selectedUser.totalJobSheetsCreated || 0} created)</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Staff Limit</span>
-                      <span className={styles.detailValue}>{selectedUser.staffLimit || 0} limit ({selectedUser.subusers?.length || 0} active sub-users)</span>
-                    </div>
-                    <div className={styles.detailItem}>
-                      <span className={styles.detailLabel}>Plan Validity</span>
-                      <span className={styles.detailValue}>
-                        {formatDate(selectedUser.planStartDate)} - {formatDate(selectedUser.planEndDate)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* SUBUSERS TAB */}
-              {activeTab === 'subusers' && (
-                <div className={styles.tabPane}>
-                  {selectedUser.subusers?.length === 0 ? (
-                    <div className={styles.panelEmptyState}>
-                      <Users size={32} />
-                      <p>No sub-users registered for this account.</p>
-                    </div>
-                  ) : (
-                    <div className={styles.scrollContainer}>
-                      <table className={styles.panelTable}>
-                        <thead>
-                          <tr>
-                            <th>Name</th>
-                            <th>Email / Phone</th>
-                            <th>Branch</th>
-                            <th>Role</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedUser.subusers.map((sub) => (
-                            <tr key={sub.uid}>
-                              <td>
-                                <div className={styles.boldText}>{sub.subUserName || sub.username || 'N/A'}</div>
-                                <div className={styles.dimText}>Emp ID: {sub.empId || 'N/A'}</div>
-                              </td>
-                              <td>
-                                <div>{sub.email}</div>
-                                <div className={styles.dimText}>{sub.phone || 'No phone'}</div>
-                              </td>
-                              <td>{sub.subBranchName || 'Main'}</td>
-                              <td>
-                                <span className={styles.roleBadge}>{sub.role || 'team'}</span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TECHNICIANS TAB */}
-              {activeTab === 'technicians' && (
-                <div className={styles.tabPane}>
-                  {selectedUser.technicians?.length === 0 ? (
-                    <div className={styles.panelEmptyState}>
-                      <Wrench size={32} />
-                      <p>No technicians created by this account.</p>
-                    </div>
-                  ) : (
-                    <div className={styles.scrollContainer}>
-                      <table className={styles.panelTable}>
-                        <thead>
-                          <tr>
-                            <th>Name</th>
-                            <th>Email / Phone</th>
-                            <th>Specialization</th>
-                            <th>Jobs Summary</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedUser.technicians.map((tech) => (
-                            <tr key={tech.id}>
-                              <td>
-                                <div className={styles.boldText}>{tech.name}</div>
-                                <div className={styles.dimText}>ID: {tech.id?.slice(-6) || 'N/A'}</div>
-                              </td>
-                              <td>
-                                <div>{tech.email}</div>
-                                <div className={styles.dimText}>{tech.mobileNo || 'No phone'}</div>
-                              </td>
-                              <td>{tech.specialization || 'General'}</td>
-                              <td>
-                                <div className={styles.dimText}>
-                                  Assigned: <strong>{tech.totalAssignedJobs || tech.assignedJobsheets?.length || 0}</strong>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* JOBSHEETS TAB */}
-              {activeTab === 'jobsheets' && (
-                <div className={styles.tabPane}>
-                  {selectedUser.jobsheets?.length === 0 ? (
-                    <div className={styles.panelEmptyState}>
-                      <FileText size={32} />
-                      <p>No jobsheets generated by this account.</p>
-                    </div>
-                  ) : (
-                    <div className={styles.scrollContainer}>
-                      <table className={styles.panelTable}>
-                        <thead>
-                          <tr>
-                            <th>Jobsheet No</th>
-                            <th>Client / Vehicle</th>
-                            <th>Status</th>
-                            <th>Created Date</th>
-                            <th>Link</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedUser.jobsheets.map((js) => (
-                            <tr key={js.id}>
-                              <td>
-                                <span className={styles.boldText}>{js.jobsheetNo}</span>
-                              </td>
-                              <td>
-                                <div className={styles.boldText}>{js.clientName || 'N/A'}</div>
-                                <div className={styles.dimText}>{js.vehicleBrand} {js.vehicleModel}</div>
-                              </td>
-                              <td>
-                                <span className={`${styles.statusDot} ${styles[js.status || 'initiated']}`}>
-                                  {js.status || 'Initiated'}
-                                </span>
-                              </td>
-                              <td>{formatDate(js.createdAt)}</td>
-                              <td>
-                                {js.pdfLink ? (
-                                  <a href={js.pdfLink} target="_blank" rel="noopener noreferrer" className={styles.linkIcon} title="Open PDF">
-                                    <ExternalLink size={16} />
-                                  </a>
-                                ) : (
-                                  'N/A'
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* TICKETS TAB */}
-              {activeTab === 'tickets' && (
-                <div className={styles.tabPane}>
-                  {selectedUser.tickets?.length === 0 ? (
-                    <div className={styles.panelEmptyState}>
-                      <Ticket size={32} />
-                      <p>No support tickets submitted by this account email.</p>
-                    </div>
-                  ) : (
-                    <div className={styles.scrollContainer}>
-                      <table className={styles.panelTable}>
-                        <thead>
-                          <tr>
-                            <th>Ticket ID</th>
-                            <th>Query Details</th>
-                            <th>Status</th>
-                            <th>Submitted At</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedUser.tickets.map((t) => (
-                            <tr key={t.id || t.ticketId}>
-                              <td>
-                                <span className={styles.boldText}>{t.ticketId}</span>
-                              </td>
-                              <td>
-                                <div className={styles.queryText} title={t.query}>{t.query}</div>
-                              </td>
-                              <td>
-                                <span className={`${styles.ticketBadge} ${styles[t.status?.toLowerCase() || 'open']}`}>
-                                  {t.status}
-                                </span>
-                              </td>
-                              <td>{formatDate(t.createdAt)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              )}
-
-            </div>
+              </thead>
+              <tbody>
+                {shown.map((b) => (
+                  <tr key={b.uid} className={c.click} onClick={() => open(b)}>
+                    <td>
+                      <span className={c.strong}>{b.companyName || '-'}</span>
+                      <span className={c.sub}>{b.website || ''}</span>
+                    </td>
+                    <td>
+                      <span className={c.strong}>{b.username || '-'}</span>
+                      <span className={c.sub}>{b.email}</span>
+                    </td>
+                    <td>{b.plan || 'Free'}</td>
+                    <td>
+                      <Badge>{statusOf(b)}</Badge>
+                    </td>
+                    <td className={c.num}>{b.subusers?.length || 0}</td>
+                    <td className={c.num}>{b.technicians?.length || 0}</td>
+                    <td className={c.num}>{b.jobsheets?.length || 0}</td>
+                    <td>{formatDate(b.createdAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </>
-      )}
+        )}
+      </Card>
+
+      <Drawer open={Boolean(u)} title={u?.companyName || 'Business'} onClose={() => setSelected(null)}>
+        {u && (
+          <>
+            <div className={c.tabs}>
+              {TABS.map((t) => (
+                <button key={t} type="button" className={`${c.tab} ${tab === t ? c.active : ''}`} onClick={() => setTab(t)}>
+                  {TAB_LABEL[t]}
+                  {t !== 'overview' && ` (${u[t]?.length || 0})`}
+                </button>
+              ))}
+            </div>
+
+            {tab === 'overview' && (
+              <dl className={c.dl} style={{ padding: 0 }}>
+                <dt>Contact</dt>
+                <dd>{u.username || '-'}</dd>
+                <dt>Email</dt>
+                <dd>
+                  <a href={`mailto:${u.email}`}>{u.email}</a>
+                </dd>
+                <dt>Mobile</dt>
+                <dd>{u.mobileNo || '-'}</dd>
+                <dt>GSTIN</dt>
+                <dd>{u.gstin || '-'}</dd>
+                <dt>Website</dt>
+                <dd>{u.website || '-'}</dd>
+                <dt>Address</dt>
+                <dd>{[u.addressLine1, u.addressLine2, u.city, u.state, u.pincode].filter(Boolean).join(', ') || '-'}</dd>
+                <dt>Joined</dt>
+                <dd>{formatDate(u.createdAt)}</dd>
+                <dt>Plan</dt>
+                <dd>
+                  {u.plan || 'Free'} ({u.billingType || 'monthly'}, {Number(u.planPrice) ? rupees(u.planPrice) : 'Free'})
+                </dd>
+                <dt>Status</dt>
+                <dd>
+                  <Badge>{statusOf(u)}</Badge>
+                </dd>
+                <dt>Plan period</dt>
+                <dd>
+                  {formatDate(u.planStartDate)} to {formatDate(u.planEndDate)}
+                </dd>
+                <dt>Job sheets</dt>
+                <dd>{u.totalJobSheetsCreated || 0} created in total</dd>
+              </dl>
+            )}
+
+            {tab === 'subusers' &&
+              (u.subusers?.length ? (
+                <div className={c.tableWrap}>
+                  <table className={c.table}>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Contact</th>
+                        <th>Branch</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {u.subusers.map((s) => (
+                        <tr key={s.uid}>
+                          <td>
+                            <span className={c.strong}>{s.subUserName || s.username || '-'}</span>
+                            <span className={c.sub}>Emp ID: {s.empId || '-'}</span>
+                          </td>
+                          <td>
+                            <span>{s.email}</span>
+                            <span className={c.sub}>{s.phone || ''}</span>
+                          </td>
+                          <td>{s.subBranchName || 'Main'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Empty>No sub-users for this business.</Empty>
+              ))}
+
+            {tab === 'technicians' &&
+              (u.technicians?.length ? (
+                <div className={c.tableWrap}>
+                  <table className={c.table}>
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Contact</th>
+                        <th className={c.num}>Assigned</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {u.technicians.map((t) => (
+                        <tr key={t.id}>
+                          <td className={c.strong}>{t.name}</td>
+                          <td>
+                            <span>{t.email}</span>
+                            <span className={c.sub}>{t.mobileNo || ''}</span>
+                          </td>
+                          <td className={c.num}>{t.totalAssignedJobs || t.assignedJobsheets?.length || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Empty>No technicians for this business.</Empty>
+              ))}
+
+            {tab === 'jobsheets' &&
+              (u.jobsheets?.length ? (
+                <div className={c.tableWrap}>
+                  <table className={c.table}>
+                    <thead>
+                      <tr>
+                        <th>Job sheet</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {u.jobsheets.map((j) => (
+                        <tr key={j.id}>
+                          <td className={c.strong}>{j.jobsheetNo}</td>
+                          <td>
+                            <span>{j.customer || '-'}</span>
+                            <span className={c.sub}>{[j.productName, j.modelName].filter(Boolean).join(' ')}</span>
+                          </td>
+                          <td>
+                            <Badge>{j.status || 'initiated'}</Badge>
+                          </td>
+                          <td>{formatDate(j.createdAt)}</td>
+                          <td>
+                            {j.pdfLink && (
+                              <a href={j.pdfLink} target="_blank" rel="noopener noreferrer" title="Open PDF">
+                                <ExternalLink size={15} />
+                              </a>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Empty>No job sheets for this business.</Empty>
+              ))}
+
+            {tab === 'tickets' &&
+              (u.tickets?.length ? (
+                <div className={c.tableWrap}>
+                  <table className={c.table}>
+                    <thead>
+                      <tr>
+                        <th>Ticket</th>
+                        <th>Question</th>
+                        <th>Status</th>
+                        <th>Raised</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {u.tickets.map((t) => (
+                        <tr key={t.id || t.ticketId}>
+                          <td className={c.mono}>{t.ticketId}</td>
+                          <td>
+                            <div className={c.clip}>{t.query}</div>
+                          </td>
+                          <td>
+                            <Badge>{t.status}</Badge>
+                          </td>
+                          <td>{formatDate(t.createdAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Empty>No support tickets from this business.</Empty>
+              ))}
+          </>
+        )}
+      </Drawer>
     </div>
   );
 }

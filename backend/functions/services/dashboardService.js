@@ -1,4 +1,4 @@
-import { jobsheetsCollections, techniciansCollections, usersCollections } from "../config/dbCollection.js";
+import { jobsheetsCollections, techniciansCollections, usersCollections, subUsersCollection } from "../config/dbCollection.js";
 
 export async function getDashboardData(uid, subuserId) {
   if (!uid) {
@@ -8,14 +8,40 @@ export async function getDashboardData(uid, subuserId) {
   }
 
   let user;
+  let ownerId = uid; // whose technicians / plan apply (the parent admin for a sub-user)
   const userDoc = await usersCollections.doc(uid).get();
   if (!userDoc.exists) {
-    if (uid === "superadmin") {
+    const subDoc = uid === "superadmin" ? null : await subUsersCollection.doc(uid).get();
+    if (subDoc?.exists) {
+      // a sub-user sees their own jobsheets, under the parent business's plan
+      const sub = subDoc.data();
+      ownerId = sub.parentUserId;
+      const parentDoc = ownerId ? await usersCollections.doc(ownerId).get() : null;
+      const parent = parentDoc?.exists ? parentDoc.data() : {};
+      user = {
+        id: uid,
+        uid,
+        role: sub.role || "team",
+        username: sub.username || sub.subUserName,
+        email: sub.email,
+        companyName: parent.companyName || sub.companyName,
+        plan: parent.plan,
+        planPrice: parent.planPrice,
+        billingType: parent.billingType,
+        jobSheetLimit: parent.jobSheetLimit,
+        staffLimit: parent.staffLimit,
+        currentStaffs: parent.currentStaffs,
+        planStartDate: parent.planStartDate,
+        planEndDate: parent.planEndDate,
+        subscriptionStatus: parent.subscriptionStatus,
+        totalJobSheetsCreated: sub.jobSheetGenerated || 0,
+      };
+    } else if (uid === "superadmin") {
       user = {
         id: "superadmin",
         uid: "superadmin",
         companyName: "Super Admin",
-        email: "admin@jobsheet.com",
+        email: process.env.SUPERADMIN_EMAIL || process.env.SUPER_ADMIN_EMAIL || "",
         username: "superadmin",
         role: "superadmin",
         plan: "unlimited",
@@ -34,7 +60,7 @@ export async function getDashboardData(uid, subuserId) {
     .get();
 
   const techniciansSnap = await techniciansCollections
-    .where("technicianOf", "==", uid)
+    .where("technicianOf", "==", ownerId)
     .get();
 
   const allJobsheets = jobsheetsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));

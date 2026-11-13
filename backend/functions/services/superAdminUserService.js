@@ -23,7 +23,10 @@ export async function getAggregatedUsersDetails() {
     });
 
     const technicians = techsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    const subusers = subusersSnap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+    const subusers = subusersSnap.docs.map(doc => {
+      const { password, ...safeData } = doc.data();
+      return { uid: doc.id, ...safeData };
+    });
     const jobsheets = jobsheetsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     const tickets = ticketsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 

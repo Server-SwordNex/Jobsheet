@@ -1,6 +1,6 @@
 import { getItem, removeItem } from '../utils/storage';
 
-const BASE = import.meta.env.VITE_API_URL;
+const BASE = import.meta.env.VITE_API_URL ?? '';
 
 // const BASE = 'http://localhost:5000'
 
@@ -16,7 +16,10 @@ async function request(endpoint, options = {}) {
   const res = await fetch(`${BASE}${endpoint}`, { ...fetchOptions, headers });
 
   if (res.status === 401 && !skipAuthRedirect) {
+    // session expired/revoked: drop every piece of cached identity
     removeItem('token');
+    removeItem('auth');
+    removeItem('user');
     window.location.hash = '#/login';
     throw new Error('Unauthorized');
   }

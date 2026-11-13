@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from "react";
 import styles from "./Subscription.module.css";
+import { useEntitlements } from "../../../context/EntitlementsContext";
 import { IdCard } from "lucide-react";
 
 export default function Subscription({ onUpgrade }) {
+  const { entitlements } = useEntitlements();
+  const isFree = entitlements?.pricingEnabled === false;
   const [subscription, setSubscription] = useState({
     plan: "-",
     planStartdDate: "-",
@@ -66,10 +69,12 @@ export default function Subscription({ onUpgrade }) {
           <div className={styles.planBlock}>
             <label>Current Plan</label>
             <div className={styles.planName}>
-              {subscription.plan}
+              {isFree ? "Free for everyone" : subscription.plan}
             </div>
           </div>
 
+          {!isFree && (
+            <>
           <div className={styles.planBlock}>
             <label>Starts from</label>
             <div className={styles.starts}>
@@ -85,8 +90,12 @@ export default function Subscription({ onUpgrade }) {
           </div>
 
 
+            </>
+          )}
         </div>
 
+        {!isFree && (
+          <>
         {/* ACTION */}
         <div className={styles.actions}>
           <button
@@ -96,6 +105,8 @@ export default function Subscription({ onUpgrade }) {
             Upgrade Plan
           </button>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

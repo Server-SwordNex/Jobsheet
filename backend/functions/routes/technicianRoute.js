@@ -10,7 +10,11 @@ import {
   assignTechnicianJobsheetHandler,
 } from "../controllers/technicianController.js";
 
+import { requireAuth } from "../middleware/authMiddleware.js";
+
 const router = Router();
+
+router.use("/api/technicians", requireAuth);
 
 router.get("/api/technicians", getTechnicians);
 router.get("/api/technicians/user/:uid", getTechniciansByUserHandler);

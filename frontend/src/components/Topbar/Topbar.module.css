@@ -176,3 +176,84 @@
   color: var(--dark);
 }
 
+
+
+/* ─── Announcements ─── */
+
+.annWrap {
+  position: relative;
+}
+
+.annBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.annWrap .iconBtn {
+  position: relative;
+}
+
+.annPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  max-height: 380px;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(30, 27, 75, 0.12);
+  padding: 8px;
+  z-index: 200;
+  animation: dropIn 0.15s ease;
+}
+
+.annTitle {
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dark);
+}
+
+.annEmpty {
+  padding: 14px 10px;
+  font-size: 13px;
+  color: rgba(var(--dark-rgb), 0.5);
+}
+
+.annItem {
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.annItem + .annItem {
+  border-top: 1px solid rgba(var(--dark-rgb), 0.06);
+}
+
+.annItemTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 2px;
+}
+
+.annItemMsg {
+  font-size: 12.5px;
+  color: rgba(var(--dark-rgb), 0.65);
+  white-space: pre-wrap;
+  word-break: break-word;
+}

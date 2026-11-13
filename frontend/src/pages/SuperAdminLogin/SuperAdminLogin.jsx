@@ -1,151 +1,124 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { Eye, EyeOff, Loader2, Lock, Mail, Moon, ShieldCheck, Sun } from 'lucide-react';
 import { setItem } from '../../utils/storage';
 import { superAdminLogin } from '../../api/auth';
-import logo from '../../assets/jobsheet-logo.png';
-import styles from './SuperAdminLogin.module.css';
+import { useConsoleTheme } from '../SuperAdminDashboard/console/useConsoleTheme';
+import s from './SuperAdminLogin.module.css';
 
-
-
-const LockIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-  </svg>
-);
-
-const EyeIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const EyeOffIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-    <line x1="2" x2="22" y1="2" y2="22" />
-  </svg>
-);
-
-function SuperAdminLogin() {
+export default function SuperAdminLogin() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const { theme, isDark, toggle } = useConsoleTheme();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (loginError) setLoginError('');
-  };
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.email) { toast.error('Email is required'); setLoginError('Email is required'); return; }
-    if (!formData.password) { toast.error('Password is required'); setLoginError('Password is required'); return; }
-    setLoginError('');
+    setError('');
     setLoading(true);
     try {
-      const email = formData.email.trim();
-      const password = formData.password.trim();
-      const data = await superAdminLogin(email, password);
+      const cleanEmail = email.trim();
+      const data = await superAdminLogin(cleanEmail, password.trim());
       setItem('token', data.token);
-      setItem('auth', { token: data.token, role: 'superadmin', email });
-      if (data.user) {
-        setItem('user', data.user);
-      }
-      toast.success('Signed in as Admin');
+      setItem('auth', { token: data.token, role: 'superadmin', email: cleanEmail });
+      if (data.user) setItem('user', data.user);
+
+      toast.success('Welcome back, super admin');
       navigate('/superadmin/dashboard');
     } catch (err) {
-      const msg = err?.error || err?.message || (typeof err === 'string' ? err : null) || 'Unauthorized Access: Invalid Admin Credentials';
-      setLoginError(msg);
-      toast.error(msg);
+      const msg =
+        err?.error || err?.message || (typeof err === 'string' ? err : null) || 'Unauthorized Access: Invalid Admin Credentials';
+      setError(msg === 'Failed to fetch' ? 'Cannot reach the server. Please try again.' : msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.leftPanel}>
-        <div className={styles.leftContent}>
-          <div className={styles.brandLogo}>
-            <img src={logo} alt="SwordNex" className={styles.logoImg} />
-          </div>
-          <div className={styles.brandTagline}>
-            <h1 className={styles.brandTitle}>Admin Portal</h1>
-            <p className={styles.brandDesc}>
-              System-wide administrative access. Manage users, pricing plans, announcements, and support tickets.
-            </p>
-          </div>
-          <div className={styles.badge}>Admin Personnel Only</div>
-        </div>
-        <div className={styles.orb1} />
-        <div className={styles.orb2} />
-        <div className={styles.gridPattern} />
-      </div>
+    <div className={s.screen} data-theme={theme}>
+      <div className={s.glow} />
+      <button
+        type="button"
+        className={s.toggle}
+        onClick={toggle}
+        aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+        title={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+      >
+        {isDark ? <Sun size={17} /> : <Moon size={17} />}
+      </button>
 
-      <div className={styles.rightPanel}>
-        <div className={styles.formContent}>
-          <div className={styles.tabPanel}>
-            <form onSubmit={handleSubmit} className={styles.form}>
-              {loginError && <div className={styles.errorMsg}>{loginError}</div>}
-              <div className={styles.field}>
-                <input
-                  type="email"
-                  id="saEmail"
-                  name="email"
-                  placeholder=" "
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-                <label htmlFor="saEmail" className={styles.label}>Admin Email</label>
-              </div>
-              <div className={styles.field}>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="saPassword"
-                  name="password"
-                  placeholder=" "
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-                <label htmlFor="saPassword" className={styles.label}>Admin Password</label>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className={styles.eyeBtn}
-                  tabIndex={-1}
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                </button>
-              </div>
-              <button type="submit" className={styles.submitBtn} disabled={loading}>
-                <LockIcon />
-                {loading ? 'Signing In...' : 'Sign In as Admin'}
+      <div className={s.wrap}>
+        <div className={s.head}>
+          <div className={s.badge}>
+            <ShieldCheck size={26} />
+          </div>
+          <h1>SwordNex Jobsheet super admin</h1>
+          <p>Every business, plan and record in one console</p>
+        </div>
+
+        <form className={s.card} onSubmit={handleSubmit}>
+          {error && <div className={s.error}>{error}</div>}
+
+          <div className={s.field}>
+            <label htmlFor="sa-email">Email</label>
+            <div className={s.inputWrap}>
+              <Mail className={s.icon} size={16} />
+              <input
+                id="sa-email"
+                className={s.input}
+                type="email"
+                name="email"
+                autoComplete="username"
+                autoFocus
+                required
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className={s.field}>
+            <label htmlFor="sa-password">Password</label>
+            <div className={s.inputWrap}>
+              <Lock className={s.icon} size={16} />
+              <input
+                id="sa-password"
+                className={s.input}
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                autoComplete="current-password"
+                required
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className={s.eye}
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
-            </form>
+            </div>
           </div>
-        </div>
 
-        <div className={styles.footer}>
-          <p>&copy; 2026 SwordNex. All rights reserved.</p>
-          <div className={styles.footerLinks}>
-            <Link to="/login">User Login</Link>
-            <Link to="/search">Search</Link>
-          </div>
-        </div>
+          <button type="submit" className={s.button} disabled={loading}>
+            {loading && <Loader2 className={s.spin} size={17} />}
+            Sign in
+          </button>
+        </form>
+
+        <p className={s.foot}>
+          Not a super admin? <Link to="/login">Business sign in</Link>
+        </p>
       </div>
     </div>
   );
 }
-
-export default SuperAdminLogin;

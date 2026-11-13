@@ -1,365 +1,354 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { Plus, X, Pencil, Trash2, DollarSign } from 'lucide-react';
-import JobSheetPlanModel from '../../../models/JobSheetPlanModel';
-import { getPlans, addPlan, editPlan, removePlan, getSubUserPrice, updateSubUserPrice } from '../../../api/endpoints';
-import styles from './SuperAdminPlans.module.css';
+import { Plus } from 'lucide-react';
+import { getPlans, addPlan, editPlan, removePlan, getSubUserPrice, updateSubUserPrice, getPlatformSettings, updatePlatformSettings } from '../../../api/endpoints';
+import c from '../console/console.module.css';
+import { useApi, errMsg, rupees } from '../console/helpers';
+import { LIMITS, TOGGLES, formFromPlan, bodyFromForm } from '../console/planCapabilities';
+import { PageHeader, Card, Badge, Loading, ErrorNotice, Empty, Field, Modal } from '../console/ui';
 
-const initialForm = {
-  name: '',
-  billingType: 'monthly',
-  price: '',
-  tagLine: '',
-  jobSheetLimit: '',
-  staffLimit: '',
-  subuserLimit: '',
-  popular: false,
-  features: '',
+const BLANK = formFromPlan({ capabilities: { prioritySupport: { enabled: false } } });
+
+/* one number row: a value or "Unlimited" */
+const LimitRow = ({ def, form, set }) => {
+  const unlimitedKey = `${def.key}Unlimited`;
+  return (
+    <div className={c.capRow}>
+      <div>
+        <strong>{def.label}</strong>
+        <small>{def.help}</small>
+      </div>
+      <div className={c.capControl}>
+        <input
+          className={c.input}
+          type="number"
+          min="0"
+          disabled={form[unlimitedKey]}
+          value={form[unlimitedKey] ? '' : form[def.key]}
+          onChange={set(def.key)}
+          placeholder="0"
+        />
+        <label className={c.check}>
+          <input type="checkbox" checked={form[unlimitedKey]} onChange={set(unlimitedKey)} />
+          Unlimited
+        </label>
+      </div>
+    </div>
+  );
 };
 
-const billingOptions = ['free', 'monthly', 'yearly'];
+/* one on/off row */
+const ToggleRow = ({ def, form, set }) => (
+  <div className={c.capRow}>
+    <div>
+      <strong>{def.label}</strong>
+      <small>{def.help}</small>
+    </div>
+    <div className={c.capControl}>
+      <select
+        className={c.select}
+        value={form[def.key] ? 'on' : 'off'}
+        onChange={(e) => set(def.key)({ target: { type: 'checkbox', checked: e.target.value === 'on' } })}
+      >
+        <option value="on">Enabled</option>
+        <option value="off">Disabled</option>
+      </select>
+    </div>
+  </div>
+);
 
-function SuperAdminPlans() {
-  const [showModal, setShowModal] = useState(false);
-  const [editingPlan, setEditingPlan] = useState(null);
-  const [form, setForm] = useState(initialForm);
-  const [plans, setPlans] = useState([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [subUserPrice, setSubUserPrice] = useState(null);
-  const [priceInput, setPriceInput] = useState('');
-  const [priceSaving, setPriceSaving] = useState(false);
+const summary = (p) => {
+  const tags = [];
+  const caps = p.capabilities || {};
+  if (caps.customerUpdates?.enabled !== false) tags.push('WhatsApp updates');
+  if (caps.reports?.enabled !== false) tags.push('Reports');
+  if (caps.customerSearch?.enabled !== false) tags.push('Customer search');
+  if (caps.prioritySupport?.enabled) tags.push('Priority support');
+  return tags;
+};
 
-  useEffect(() => {
-    getPlans()
-      .then((data) => setPlans(Array.isArray(data) ? data : []))
-      .catch(() => toast.error('Failed to load plans'));
-  }, []);
+const unlimitedOr = (n) => (Number(n) > 0 ? n : 'Unlimited');
 
-  useEffect(() => {
-    getSubUserPrice()
-      .then((res) => {
-        const price = res?.data;
-        if (price) {
-          setSubUserPrice(price.pricePerSubUser);
-          setPriceInput(String(price.pricePerSubUser));
-        }
-      })
-      .catch(() => {});
-  }, []);
+export default function SuperAdminPlans() {
+  const plans = useApi(getPlans);
+  const price = useApi(getSubUserPrice);
+  const settings = useApi(getPlatformSettings);
+  const [switching, setSwitching] = useState(false);
+  // pricing starts OFF: Jobsheet is free until the super admin turns it on
+  const pricingOn = settings.data ? settings.data.pricingEnabled === true : false;
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-  };
+  const [editing, setEditing] = useState(null); // null | { id?, form }
+  const [saving, setSaving] = useState(false);
+  // what is typed in the price box; until the admin types, show the saved price
+  const [subPriceEdit, setSubPriceEdit] = useState(null);
+  const saved = price.data?.data?.pricePerSubUser;
+  const subPrice = subPriceEdit ?? (saved !== undefined ? String(saved) : '');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.name.trim()) { toast.error('Plan name is required'); return; }
+  const set = (key) => (e) =>
+    setEditing((s) => ({
+      ...s,
+      form: { ...s.form, [key]: e.target.type === 'checkbox' ? e.target.checked : e.target.value },
+    }));
 
-    const data = {
-      name: form.name,
-      billingType: form.billingType,
-      price: Number(form.price),
-      tagLine: form.tagLine,
-      jobSheetLimit: Number(form.jobSheetLimit),
-      staffLimit: Number(form.staffLimit),
-      subuserLimit: Number(form.subuserLimit),
-      popular: form.popular,
-      features: form.features
-        .split('\n')
-        .map((f) => f.trim())
-        .filter(Boolean),
-    };
+  const save = async () => {
+    const f = editing.form;
+    if (!f.name.trim()) return toast.error('Give the plan a name');
 
-    setSubmitting(true);
+    setSaving(true);
     try {
-      if (editingPlan) {
-        const id = editingPlan._id || editingPlan.id;
-        const updated = await editPlan(id, data);
-        setPlans((prev) => prev.map((p) => ((p._id || p.id) === id ? { ...p, ...data } : p)));
-        toast.success(`Plan "${data.name}" updated`);
-      } else {
-        const created = await addPlan(data);
-        setPlans((prev) => [...prev, created]);
-        toast.success(`Plan "${data.name}" created`);
-      }
-      setForm(initialForm);
-      setEditingPlan(null);
-      setShowModal(false);
+      const body = bodyFromForm(f);
+      if (editing.id) await editPlan(editing.id, body);
+      else await addPlan(body);
+      toast.success(editing.id ? 'Plan updated' : 'Plan created');
+      setEditing(null);
+      plans.reload();
     } catch (err) {
-      const msg = err?.message || err?.error || 'Failed to save plan';
-      toast.error(msg);
+      toast.error(errMsg(err));
     } finally {
-      setSubmitting(false);
+      setSaving(false);
     }
   };
 
-  const handleEdit = (plan) => {
-    setEditingPlan(plan);
-    setForm({
-      name: plan.name || '',
-      billingType: plan.billingType || 'monthly',
-      price: plan.price ?? '',
-      tagLine: plan.tagLine || '',
-      jobSheetLimit: plan.jobSheetLimit ?? '',
-      staffLimit: plan.staffLimit ?? '',
-      subuserLimit: plan.subuserLimit ?? '',
-      popular: !!plan.popular,
-      features: Array.isArray(plan.features) ? plan.features.join('\n') : '',
-    });
-    setShowModal(true);
-  };
-
-  const handleDelete = async (plan) => {
-    const id = plan._id || plan.id;
-    if (!window.confirm(`Delete plan "${plan.name}"?`)) return;
-    setDeletingId(id);
+  const remove = async (p) => {
+    if (!window.confirm(`Delete the plan "${p.name}"? Businesses already on it keep the limits saved at sign-up.`)) return;
     try {
-      await removePlan(id);
-      setPlans((prev) => prev.filter((p) => (p._id || p.id) !== id));
-      toast.success(`Plan "${plan.name}" deleted`);
+      await removePlan(p.id);
+      toast.success('Plan deleted');
+      plans.reload();
     } catch (err) {
-      const msg = err?.message || err?.error || 'Failed to delete plan';
-      toast.error(msg);
-    } finally {
-      setDeletingId(null);
+      toast.error(errMsg(err));
     }
   };
 
-  const handleSaveSubUserPrice = async () => {
-    const val = Number(priceInput);
-    if (isNaN(val) || val < 0) { toast.error('Enter a valid price'); return; }
-    setPriceSaving(true);
+  const setPricing = async () => {
+    const next = !pricingOn;
+    const ok = window.confirm(
+      next
+        ? 'Switch pricing ON? Plans, limits, features and expiry apply again. Businesses that signed up while it was off start a fresh 14-day free trial from today.'
+        : 'Switch pricing OFF? Jobsheet becomes completely free for everyone: no expiry, no limits, every feature on, and no plan to choose when signing up.'
+    );
+    if (!ok) return;
+
+    setSwitching(true);
     try {
-      await updateSubUserPrice(val);
-      setSubUserPrice(val);
-      toast.success('Sub-user price updated');
-    } catch {
-      toast.error('Failed to update sub-user price');
+      const res = await updatePlatformSettings({ pricingEnabled: next });
+      toast.success(
+        next
+          ? `Pricing is ON${res.trialsStarted ? ` (${res.trialsStarted} free trial${res.trialsStarted === 1 ? '' : 's'} started)` : ''}`
+          : 'Pricing is OFF: Jobsheet is free for everyone'
+      );
+      settings.reload();
+    } catch (err) {
+      toast.error(errMsg(err));
     } finally {
-      setPriceSaving(false);
+      setSwitching(false);
     }
   };
 
-  const handleClose = () => {
-    setForm(initialForm);
-    setEditingPlan(null);
-    setShowModal(false);
+  const saveSubPrice = async () => {
+    try {
+      await updateSubUserPrice(Number(subPrice) || 0);
+      toast.success('Team member price saved');
+      setSubPriceEdit(null);
+      price.reload();
+    } catch (err) {
+      toast.error(errMsg(err));
+    }
   };
+
+  const list = plans.data || [];
 
   return (
-    <div className={styles.container}>
-      <div className={styles.subUserPriceSection}>
-        <div className={styles.subUserPriceRow}>
-          <DollarSign size={20} />
-          <div>
-            <strong>Sub-user Price</strong>
-            <p>Price per additional sub-user beyond plan limit</p>
-          </div>
-          <input
-            className={styles.priceInput}
-            type="number"
-            min="0"
-            value={priceInput}
-            onChange={(e) => setPriceInput(e.target.value)}
-            placeholder="Enter price"
-          />
-          <button className={styles.savePriceBtn} onClick={handleSaveSubUserPrice} disabled={priceSaving}>
-            {priceSaving ? 'Saving...' : 'Save'}
+    <div className={c.page}>
+      <PageHeader
+        title="Plans & pricing"
+        subtitle="What businesses can subscribe to. Limits and features are enforced by the server."
+        actions={
+          <button className={c.btn} onClick={() => setEditing({ form: BLANK })}>
+            <Plus size={16} /> New plan
           </button>
-        </div>
-      </div>
+        }
+      />
 
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.heading}>Plans</h1>
-          <p className={styles.subtitle}>Manage subscription plans.</p>
-        </div>
-        <button className={styles.addBtn} onClick={() => setShowModal(true)}>
-          <Plus size={18} />
-          Add Plan
-        </button>
-      </div>
+      {plans.error && <ErrorNotice message={plans.error} onRetry={plans.reload} />}
+      {settings.error && <ErrorNotice message={settings.error} onRetry={settings.reload} />}
 
-      {plans.length > 0 && (
-        <div className={styles.planList}>
-          {plans.map((plan) => (
-            <div key={plan._id || plan.id} className={styles.planCard}>
-              <div className={styles.planCardTop}>
-                <h3 className={styles.planName}>{plan.name}</h3>
-                {plan.popular && <span className={styles.popularBadge}>Popular</span>}
-                <div className={styles.planActions}>
-                  <button className={styles.actionBtn} onClick={() => handleEdit(plan)} aria-label="Edit plan">
-                    <Pencil size={15} />
-                  </button>
-                  <button
-                    className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                    onClick={() => handleDelete(plan)}
-                    disabled={deletingId === (plan._id || plan.id)}
-                    aria-label="Delete plan"
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-              </div>
-              <p className={styles.planBilling}>{plan.billingType}</p>
-              <p className={styles.planPrice}>₹{plan.price}</p>
-              {plan.tagLine && <p className={styles.planTagLine}>{plan.tagLine}</p>}
-            </div>
-          ))}
+      {!pricingOn && (
+        <div className={`${c.notice} ${c.freeNotice}`}>
+          Pricing is OFF. SwordNex Jobsheet is completely free for everyone right now: no expiry, no limits, every
+          feature on, and new businesses sign up without choosing a plan. The plans below are kept and apply again
+          when you switch pricing on.
         </div>
       )}
 
-      {showModal && (
-        <div className={styles.overlay} onClick={handleClose}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>{editingPlan ? 'Edit Plan' : 'Add Plan'}</h2>
-              <button className={styles.closeBtn} onClick={handleClose}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className={styles.form}>
-              <div className={styles.formRow}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Plan Name *</label>
-                  <input
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    className={styles.input}
-                    placeholder="e.g. Basic Plan"
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Billing Type</label>
-                  <select
-                    name="billingType"
-                    value={form.billingType}
-                    onChange={handleChange}
-                    className={styles.input}
-                  >
-                    {billingOptions.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Price (₹)</label>
-                  <input
-                    name="price"
-                    type="number"
-                    min="0"
-                    value={form.price}
-                    onChange={handleChange}
-                    className={styles.input}
-                    placeholder="0"
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Tag Line</label>
-                  <input
-                    name="tagLine"
-                    value={form.tagLine}
-                    onChange={handleChange}
-                    className={styles.input}
-                    placeholder="e.g. Best for small businesses"
-                  />
-                </div>
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Job Sheet Limit</label>
-                  <input
-                    name="jobSheetLimit"
-                    type="number"
-                    min="0"
-                    value={form.jobSheetLimit}
-                    onChange={handleChange}
-                    className={styles.input}
-                    placeholder="0"
-                  />
-                </div>
-                <div className={styles.field}>
-                  <label className={styles.label}>Staff Limit</label>
-                  <input
-                    name="staffLimit"
-                    type="number"
-                    min="0"
-                    value={form.staffLimit}
-                    onChange={handleChange}
-                    className={styles.input}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
-              <div className={styles.formRow}>
-                <div className={styles.field}>
-                  <label className={styles.label}>Subuser Limit</label>
-                  <input
-                    name="subuserLimit"
-                    type="number"
-                    min="0"
-                    value={form.subuserLimit}
-                    onChange={handleChange}
-                    className={styles.input}
-                    placeholder="0"
-                  />
-                </div>
-                <div className={styles.field} style={{ visibility: 'hidden' }}>
-                  <label className={styles.label}>Placeholder</label>
-                  <input className={styles.input} disabled />
-                </div>
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.checkLabel}>
-                  <input
-                    name="popular"
-                    type="checkbox"
-                    checked={form.popular}
-                    onChange={handleChange}
-                    className={styles.checkbox}
-                  />
-                  Mark as Popular
-                </label>
-              </div>
-
-              <div className={styles.field}>
-                <label className={styles.label}>Features (one per line)</label>
-                <textarea
-                  name="features"
-                  value={form.features}
-                  onChange={handleChange}
-                  className={styles.textarea}
-                  rows={5}
-                  placeholder="24/7 support&#10;Unlimited job sheets&#10;Priority service"
-                />
-              </div>
-
-              <div className={styles.formActions}>
-                <button type="button" className={styles.cancelBtn} onClick={handleClose}>
-                  Cancel
-                </button>
-                <button type="submit" className={styles.submitBtn} disabled={submitting}>
-                  {submitting ? 'Saving...' : editingPlan ? 'Update Plan' : 'Create Plan'}
-                </button>
-              </div>
-            </form>
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section className={`${c.card} ${c.master}`}>
+          <div>
+            <h2>Pricing</h2>
+            <p>
+              {pricingOn
+                ? "On: each plan's limits, features, free trial and expiry apply."
+                : 'Off: Jobsheet is free for everyone. Nothing expires, nothing is limited and no plan is asked for.'}
+            </p>
           </div>
-        </div>
-      )}
+          <div className={c.row}>
+            <Badge tone={pricingOn ? 'ok' : 'warn'}>{pricingOn ? 'Enabled' : 'Disabled'}</Badge>
+            <button
+              type="button"
+              className={`${c.switch} ${pricingOn ? c.on : ''}`}
+              onClick={setPricing}
+              disabled={switching || settings.loading}
+              role="switch"
+              aria-checked={pricingOn}
+              aria-label="Pricing enabled"
+            />
+          </div>
+        </section>
+
+        <Card title="Plans" note={`${list.length} plan${list.length === 1 ? '' : 's'}`}>
+          {plans.loading ? (
+            <Loading />
+          ) : list.length === 0 ? (
+            <Empty>No plans yet. Create the first plan so businesses can sign up.</Empty>
+          ) : (
+            <div className={c.tableWrap}>
+              <table className={c.table}>
+                <thead>
+                  <tr>
+                    <th>Plan</th>
+                    <th>Billing</th>
+                    <th className={c.num}>Price</th>
+                    <th className={c.num}>Job sheets / mo</th>
+                    <th className={c.num}>Technicians</th>
+                    <th className={c.num}>Team</th>
+                    <th>Features</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {list.map((p) => (
+                    <tr key={p.id}>
+                      <td>
+                        <span className={c.strong}>{p.name}</span>
+                        {p.popular && (
+                          <>
+                            {' '}
+                            <Badge tone="accent">Popular</Badge>
+                          </>
+                        )}
+                        <span className={c.sub}>{p.tagLine}</span>
+                      </td>
+                      <td>{p.billingType}</td>
+                      <td className={c.num}>{Number(p.price) ? rupees(p.price) : 'Free'}</td>
+                      <td className={c.num}>{unlimitedOr(p.jobSheetLimit)}</td>
+                      <td className={c.num}>{unlimitedOr(p.staffLimit)}</td>
+                      <td className={c.num}>{p.subuserLimit === null ? 'Unlimited' : p.subuserLimit}</td>
+                      <td>
+                        <div className={c.tags}>
+                          {summary(p).map((t) => (
+                            <Badge key={t} tone="">
+                              {t}
+                            </Badge>
+                          ))}
+                        </div>
+                      </td>
+                      <td className={c.num}>
+                        <div className={c.row} style={{ justifyContent: 'flex-end' }}>
+                          <button className={`${c.btn} ${c.ghost} ${c.small}`} onClick={() => setEditing({ id: p.id, form: formFromPlan(p) })}>
+                            Edit
+                          </button>
+                          <button className={`${c.btn} ${c.danger} ${c.small}`} onClick={() => remove(p)}>
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+
+        <Card title="Extra team members" note="Price per additional team member" pad>
+          <div className={c.row}>
+            <input className={c.input} style={{ width: 140 }} type="number" min="0" value={subPrice} onChange={(e) => setSubPriceEdit(e.target.value)} />
+            <button className={c.btn} onClick={saveSubPrice}>
+              Save price
+            </button>
+          </div>
+        </Card>
+      </div>
+
+      <Modal
+        open={Boolean(editing)}
+        title={editing?.id ? 'Edit plan' : 'New plan'}
+        onClose={() => setEditing(null)}
+        footer={
+          <>
+            <button className={`${c.btn} ${c.ghost}`} onClick={() => setEditing(null)}>
+              Cancel
+            </button>
+            <button className={c.btn} disabled={saving} onClick={save}>
+              {saving ? 'Saving...' : 'Save plan'}
+            </button>
+          </>
+        }
+      >
+        {editing && (
+          <div className={c.form}>
+            <div className={c.cols2}>
+              <Field label="Plan name">
+                <input className={c.input} value={editing.form.name} onChange={set('name')} placeholder="Premium" />
+              </Field>
+              <Field label="Billing">
+                <select className={c.select} style={{ width: '100%' }} value={editing.form.billingType} onChange={set('billingType')}>
+                  <option value="free">Free (trial)</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="annual">Annual</option>
+                </select>
+              </Field>
+            </div>
+            <div className={c.cols2}>
+              <Field label="Price (₹)" hint={editing.form.billingType === 'free' ? 'A free plan costs nothing' : undefined}>
+                <input
+                  className={c.input}
+                  type="number"
+                  min="0"
+                  disabled={editing.form.billingType === 'free'}
+                  value={editing.form.billingType === 'free' ? 0 : editing.form.price}
+                  onChange={set('price')}
+                />
+              </Field>
+              <Field label="Tag line">
+                <input className={c.input} value={editing.form.tagLine} onChange={set('tagLine')} />
+              </Field>
+            </div>
+
+            <div className={c.sectionLabel}>Limits</div>
+            <div>
+              {LIMITS.map((def) => (
+                <LimitRow key={def.key} def={def} form={editing.form} set={set} />
+              ))}
+            </div>
+
+            <div className={c.sectionLabel}>Features</div>
+            <div>
+              {TOGGLES.map((def) => (
+                <ToggleRow key={def.key} def={def} form={editing.form} set={set} />
+              ))}
+            </div>
+
+            <Field label="Extra feature lines (optional)" hint="One per line. These are added to the pricing card after the lines above.">
+              <textarea className={c.textarea} value={editing.form.extraFeatures} onChange={set('extraFeatures')} />
+            </Field>
+            <label className={c.check}>
+              <input type="checkbox" checked={editing.form.popular} onChange={set('popular')} />
+              Mark as most popular
+            </label>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
-
-export default SuperAdminPlans;

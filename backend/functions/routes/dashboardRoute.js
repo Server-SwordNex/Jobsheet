@@ -1,14 +1,9 @@
 import { Router } from "express";
 import { getDashboardHandler } from "../controllers/dashboardController.js";
-import { requireAdminAuth } from "../middleware/adminAuthMiddleware.js";
+import { requireAuth } from "../middleware/authMiddleware.js";
 
 const router = Router();
 
-router.get("/api/dashboard/:uid", (req, res, next) => {
-  if (req.params.uid === "superadmin") {
-    return requireAdminAuth(req, res, next);
-  }
-  next();
-}, getDashboardHandler);
+router.get("/api/dashboard/:uid", requireAuth, getDashboardHandler);
 
 export default router;

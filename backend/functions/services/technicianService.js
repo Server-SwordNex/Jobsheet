@@ -1,6 +1,7 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { jobsheetsCollections, techniciansCollections, usersCollections } from "../config/dbCollection.js";
 import TechnicianModel from "../models/technicianModel.js";
+import { assertCanCreateTechnician } from "./planLimitService.js";
 
 export async function getAllTechnicians() {
   const snapshot = await techniciansCollections.get();
@@ -30,6 +31,8 @@ export async function createTechnician(data) {
     error.status = 400;
     throw error;
   }
+
+  await assertCanCreateTechnician(data.technicianOf);
 
   const model = new TechnicianModel(data);
   const docRef = await techniciansCollections.add(model.toFirestore());
@@ -67,7 +70,17 @@ export async function deleteTechnician(id) {
     error.status = 404;
     throw error;
   }
+  const ownerId = doc.data().technicianOf;
   await techniciansCollections.doc(id).delete();
+
+  // keep the displayed staff counter in step with creation
+  if (ownerId) {
+    try {
+      await usersCollections.doc(ownerId).update({ currentStaffs: FieldValue.increment(-1) });
+    } catch (err) {
+      console.warn("Could not decrement currentStaffs:", err.message);
+    }
+  }
   return { message: "Technician deleted successfully" };
 }
 

@@ -4,6 +4,8 @@ import { Timestamp } from "firebase-admin/firestore";
 import { usersCollections, userSessionsCollections, subUsersCollection } from "../config/dbCollection.js";
 import { config } from "../config/envConfig.js";
 import { createSessionModel } from "../models/sessionModel.js";
+import { safeEqual } from "../utils/safeEqual.js";
+import { signInWithPassword } from "../utils/firebaseRest.js";
 
 const withTimeout = (promise, ms = 2500) =>
   Promise.race([
@@ -23,6 +25,36 @@ async function findUserInCollection(collection, email) {
     console.warn("findUserInCollection error or timeout:", err.message);
     return { empty: true, docs: [] };
   }
+}
+
+/**
+ * Creates a server-side session and a JWT bound to it (`sid`). The token is only
+ * accepted while that session is active, which makes logout/revocation effective.
+ */
+export async function issueSessionToken({ userId, email, role, parentUid = null, deviceInfo = "", ipAddress = "" }) {
+  const sessionRef = userSessionsCollections.doc();
+
+  const tokenPayload = { userId, email, role, sid: sessionRef.id };
+  if (parentUid) tokenPayload.parentUid = parentUid;
+
+  const token = jwt.sign(tokenPayload, config.jwtSecret, {
+    expiresIn: config.jwtExpiresIn,
+    algorithm: "HS256",
+  });
+
+  const expiresAtDate = new Date();
+  expiresAtDate.setDate(expiresAtDate.getDate() + 7);
+
+  await sessionRef.set(
+    createSessionModel({
+      userId,
+      deviceInfo,
+      ipAddress,
+      expiresAt: Timestamp.fromDate(expiresAtDate),
+    })
+  );
+
+  return token;
 }
 
 export async function loginUser(email, password, deviceInfo = "", ipAddress = "", requestedRole = null) {
@@ -45,10 +77,11 @@ export async function loginUser(email, password, deviceInfo = "", ipAddress = ""
       error.status = 401;
       throw error;
     }
-    if (cleanPassword === cleanSuperPass) {
+    if (cleanSuperPass && safeEqual(cleanPassword, cleanSuperPass)) {
       const tokenPayload = { userId: "superadmin", email: config.superadminEmail, role: "superadmin" };
       const token = jwt.sign(tokenPayload, config.jwtSecret, {
         expiresIn: config.jwtExpiresIn,
+        algorithm: "HS256",
       });
 
       return {
@@ -93,6 +126,19 @@ export async function loginUser(email, password, deviceInfo = "", ipAddress = ""
     const subuserSnapshot = await findUserInCollection(subUsersCollection, cleanEmail);
 
     if (subuserSnapshot.empty) {
+      // Shared SwordNex login: someone with a SwordNex account from another app (Products,
+      // Billing, Payroll...) but no Jobsheet business yet may set one up. The token is only
+      // good for /api/auth/activate.
+      if (config.sharedLogin) {
+        const authData = await signInWithPassword(cleanEmail, password);
+        if (authData) {
+          const error = new Error("You don't have a Jobsheet business yet.");
+          error.status = 403;
+          error.apiCode = "NEEDS_ACTIVATION";
+          error.activationToken = authData.idToken;
+          throw error;
+        }
+      }
       const error = new Error("Invalid email or password");
       error.status = 401;
       throw error;
@@ -103,9 +149,18 @@ export async function loginUser(email, password, deviceInfo = "", ipAddress = ""
     isSubuser = true;
   }
 
-  // Verify password for found account
-  const passwordMatch = (await bcrypt.compare(cleanPassword, userData.password || "")) ||
-                        (await bcrypt.compare(password, userData.password || ""));
+  // Verify password for found account. A business owner on the shared SwordNex login is checked
+  // against that login (so a password changed in another SwordNex app applies here too); team
+  // members and Jobsheet-only accounts are checked against the hash stored here.
+  let passwordMatch;
+  if (!isSubuser && config.sharedLogin && userData.authSource === "shared") {
+    const authData = await signInWithPassword(cleanEmail, password);
+    passwordMatch = Boolean(authData) && authData.localId === doc.id;
+  } else {
+    passwordMatch =
+      (await bcrypt.compare(cleanPassword, userData.password || "")) ||
+      (await bcrypt.compare(password, userData.password || ""));
+  }
   if (!passwordMatch) {
     const error = new Error("Invalid email or password");
     error.status = 401;
@@ -115,23 +170,14 @@ export async function loginUser(email, password, deviceInfo = "", ipAddress = ""
   // Use team role if subuser, otherwise user's role (admin)
   const role = isSubuser ? (userData.role || "team") : (userData.role || "admin");
 
-  const tokenPayload = { userId: doc.id, email: userData.email, role: role };
-  const token = jwt.sign(tokenPayload, config.jwtSecret, {
-    expiresIn: config.jwtExpiresIn,
-  });
-
-  const expiresAtDate = new Date();
-  expiresAtDate.setDate(expiresAtDate.getDate() + 7);
-
-  const sessionData = createSessionModel({
+  const token = await issueSessionToken({
     userId: doc.id,
-    token,
+    email: userData.email,
+    role,
+    parentUid: isSubuser ? userData.parentUserId : null,
     deviceInfo,
     ipAddress,
-    expiresAt: Timestamp.fromDate(expiresAtDate),
   });
-
-  await userSessionsCollections.add(sessionData);
 
   const { password: _, ...safeUser } = userData;
   return { token, user: { id: doc.id, uid: doc.id, ...safeUser, role } };
@@ -144,34 +190,22 @@ export async function logoutUser(token) {
     throw error;
   }
 
+  let decoded;
   try {
-    jwt.verify(token, config.jwtSecret);
+    decoded = jwt.verify(token, config.jwtSecret, { algorithms: ["HS256"] });
   } catch {
     const error = new Error("Invalid or expired token");
     error.status = 401;
     throw error;
   }
 
-  const snapshot = await userSessionsCollections
-    .where("token", "==", token)
-    .where("isActive", "==", true)
-    .limit(1)
-    .get();
-
-  if (!snapshot.empty) {
-    const sessionDoc = snapshot.docs[0];
-    await sessionDoc.ref.update({ isActive: false, lastActivityAt: Timestamp.now() });
+  if (decoded.sid) {
+    const sessionRef = userSessionsCollections.doc(String(decoded.sid));
+    const sessionSnap = await sessionRef.get();
+    if (sessionSnap.exists && sessionSnap.data().userId === decoded.userId) {
+      await sessionRef.update({ isActive: false, lastActivityAt: Timestamp.now() });
+    }
   }
 
   return { message: "Logged out successfully" };
-}
-
-export function getCurrentUser(token) {
-  try {
-    return jwt.verify(token, config.jwtSecret);
-  } catch {
-    const error = new Error("Invalid or expired token");
-    error.status = 401;
-    throw error;
-  }
 }

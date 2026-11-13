@@ -68,8 +68,9 @@ export const createUserModel = (data) => {
     staffLimit:
       data.staffLimit || 0,
 
+    // null = unlimited team members
     subuserLimit:
-      data.subuserLimit || 0,
+      data.subuserLimit === null ? null : data.subuserLimit || 0,
 
     currentStaffs: 0,
 
@@ -107,6 +108,14 @@ export const createUserModel = (data) => {
       data.terms || "",
 
     // ================= AUTH =================
+
+    // true = signed up while pricing was OFF (no real plan yet): they start a fresh trial when it is switched ON
+    pricingOffSignup:
+      data.pricingOffSignup || false,
+
+    // "shared" = password lives in the shared SwordNex login; "local" = hash stored here
+    authSource:
+      data.authSource || "local",
 
     isGoogleAuth:
       data.isGoogleAuth || false,

@@ -3,7 +3,8 @@ import { FieldValue } from "firebase-admin/firestore";
 import path from "path";
 import fs from "fs/promises";
 import { fileURLToPath } from "url";
-import { jobsheetsCollections, techniciansCollections, usersCollections } from "../config/dbCollection.js";
+import { jobsheetsCollections, techniciansCollections, usersCollections, subUsersCollection } from "../config/dbCollection.js";
+import { assertCanCreateJobsheet, currentMonthKey, hasFeature } from "./planLimitService.js";
 import { bucket } from "../config/firebaseTenantConfig.js";
 import JobsheetModel from "../models/jobsheetModel.js";
 import { assignJobsheetToTechnician } from "./technicianService.js";
@@ -44,7 +45,11 @@ async function compressPdf(buffer) {
   return Buffer.from(compressed);
 }
 
-export async function createJobsheet({ pdfBuffer, fields }) {
+/**
+ * @param ownerId the business account the jobsheet counts against: the admin's own id,
+ *                or the parent admin's id when a sub-user creates it.
+ */
+export async function createJobsheet({ pdfBuffer, fields, ownerId }) {
   const { subuserId, ...rawData } = fields;
 
   if (!rawData.jobsheetNo || !rawData.generatedById) {
@@ -53,11 +58,18 @@ export async function createJobsheet({ pdfBuffer, fields }) {
     throw error;
   }
 
+  const accountId = ownerId || rawData.generatedById;
+  await assertCanCreateJobsheet(accountId);
+
   const sanitizedNo = rawData.jobsheetNo.replace(/\//g, "-");
   let storagePath = `jobsheet/${rawData.generatedById}/${sanitizedNo}.pdf`;
   if (subuserId) {
     storagePath = `jobsheet/${rawData.generatedById}/${subuserId}/${sanitizedNo}.pdf`;
   }
+
+  // A technician is only ever resolved server-side (by name, within the author's own
+  // technicians) - a client-supplied id could point at another business's technician.
+  rawData.technicianId = "";
 
   const compressedBuffer = await compressPdf(pdfBuffer);
 
@@ -92,6 +104,7 @@ export async function createJobsheet({ pdfBuffer, fields }) {
     ...rawData,
     pdfLink: pdfUrl,
     pdfStoragePath: storagePath,
+    monthKey: currentMonthKey(),
   });
 
   const docRef = await jobsheetsCollections.add(model.toFirestore());
@@ -104,7 +117,15 @@ export async function createJobsheet({ pdfBuffer, fields }) {
       totalJobSheetsCreated: FieldValue.increment(1),
     });
   } else {
-    console.warn(`User ${rawData.generatedById} not found in users collection; skipped totalJobSheetsCreated increment.`);
+    // created by a sub-user: count it for the sub-user and for the business account
+    const subRef = subUsersCollection.doc(rawData.generatedById);
+    const subSnap = await subRef.get();
+    if (subSnap.exists) {
+      await subRef.update({ jobSheetGenerated: FieldValue.increment(1) });
+      await usersCollections.doc(accountId).update({ totalJobSheetsCreated: FieldValue.increment(1) });
+    } else {
+      console.warn(`Author ${rawData.generatedById} not found; skipped jobsheet counters.`);
+    }
   }
 
   let resolvedTechnicianId = rawData.technicianId;
@@ -112,7 +133,7 @@ export async function createJobsheet({ pdfBuffer, fields }) {
   if (!resolvedTechnicianId && rawData.technician) {
     const techSnap = await techniciansCollections
       .where("name", "==", rawData.technician)
-      .where("technicianOf", "==", rawData.generatedById)
+      .where("technicianOf", "==", accountId)
       .get();
 
     if (!techSnap.empty) {
@@ -125,7 +146,7 @@ export async function createJobsheet({ pdfBuffer, fields }) {
   }
 
   // Send WhatsApp message to the customer once after jobsheet created
-  if (rawData.mobile) {
+  if (rawData.mobile && (await hasFeature(accountId, "customerUpdates"))) {
     try {
       await whatsappService({
         to: rawData.mobile,
@@ -197,7 +218,7 @@ export async function updateJobsheetStatus(jobsheetId, status) {
   });
 
   // Send WhatsApp message once status is updated to completed
-  if (status === "completed" && jobsheetData.mobile) {
+  if (status === "completed" && jobsheetData.mobile && (await hasFeature(jobsheetData.generatedById, "customerUpdates"))) {
     try {
       await whatsappService({
         to: jobsheetData.mobile,
@@ -236,7 +257,7 @@ export async function searchJobsheet({ jobId, mobileNumber, name }) {
 
   const cleanSearchMobile = mobileNumber.replace(/\D/g, "");
 
-  const matchingDoc = snapshot.docs.find((doc) => {
+  const candidates = snapshot.docs.filter((doc) => {
     const data = doc.data();
     const cleanDbMobile = (data.mobile || "").replace(/\D/g, "");
     
@@ -256,6 +277,15 @@ export async function searchJobsheet({ jobId, mobileNumber, name }) {
 
     return true;
   });
+
+  // only businesses whose plan includes customer search can be found here
+  let matchingDoc = null;
+  for (const doc of candidates) {
+    if (await hasFeature(doc.data().generatedById, "customerSearch")) {
+      matchingDoc = doc;
+      break;
+    }
+  }
 
   if (!matchingDoc) {
     const error = new Error("No matching jobsheet found with this mobile number");

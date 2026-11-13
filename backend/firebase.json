@@ -1,28 +1,29 @@
 {
   "functions": [
     {
-      "codebase": "default",
+      "source": "functions",
+      "codebase": "jobsheet",
+      "runtime": "nodejs22",
       "disallowLegacyRuntimeConfig": true,
       "ignore": [
         "node_modules",
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local"
-      ],
-      "source": "functions"
-    },
-    {
-      "source": "jobsheetApi",
-      "codebase": "jobsheetapi",
-      "disallowLegacyRuntimeConfig": true,
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
+        "*.local",
+        ".env.old-*",
+        ".env.local",
+        ".env.example",
+        "config/*ServiceAccountKey*.json",
+        "scratch"
       ]
+    }
+  ],
+  "firestore": [
+    {
+      "database": "jobsheet",
+      "rules": "firestore.rules",
+      "indexes": "firestore.indexes.json"
     }
   ]
 }

@@ -4,14 +4,30 @@ import { mailService } from "../mail/mailService.js";
 import { config } from "../config/envConfig.js";
 
 
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const clip = (value, max) => String(value ?? "").slice(0, max);
+
 export async function createSupportTicket(data) {
   const ticketId = `TICKET-${Date.now()}`;
 
-  const name = data.name || data.username || "";
-  const companyName = data.companyName || data.businessName || "";
-  const email = data.email || "";
-  const mobileNo = data.mobileNo || data.mobile || "";
-  const query = data.query || "";
+  const name = clip(data.name || data.username || "", 120);
+  const companyName = clip(data.companyName || data.businessName || "", 160);
+  const email = clip(data.email || "", 200);
+  const mobileNo = clip(data.mobileNo || data.mobile || "", 30);
+  const query = clip(data.query || "", 5000);
+
+  if (!query.trim()) {
+    const error = new Error("Query is required");
+    error.status = 400;
+    throw error;
+  }
 
   await supportTicketsCollection.doc(ticketId).set({
     ticketId,
@@ -28,7 +44,15 @@ export async function createSupportTicket(data) {
     await mailService({
       type: "SUPPORT_TICKET",
       to: config.superadminEmail || process.env.SUPERADMIN_EMAIL || "admin@jobsheet.com",
-      data: { ticketId, name, companyName, email, mobileNo, query },
+      // user-supplied text goes into an HTML email: escape it
+      data: {
+        ticketId,
+        name: escapeHtml(name),
+        companyName: escapeHtml(companyName),
+        email: escapeHtml(email),
+        mobileNo: escapeHtml(mobileNo),
+        query: escapeHtml(query).replace(/\n/g, "<br>"),
+      },
     });
   } catch (mailError) {
     console.error("Failed to send support ticket email:", mailError);

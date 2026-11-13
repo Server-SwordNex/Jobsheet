@@ -1,69 +1,19 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import StateDropdown from '../../components/StateDropdown/StateDropdown';
-import TypingText from '../../components/TypingText/TypingText';
+import { Building2, Globe, FileText, MapPin, User, Phone, Mail, Lock, CheckCircle2 } from 'lucide-react';
 import { sendOtp, verifyOtp } from '../../api/endpoints';
 import { setItem } from '../../utils/storage';
-import logo from '../../assets/jobsheet-logo.png';
-import styles from './RegisterPage.module.css';
+import { completeSignUp, fetchPricingEnabled } from '../../utils/signup';
+import { indianStates } from '../../utils/indianStates';
+import AuthShell from '../../components/AuthShell/AuthShell';
+import ui from '../../components/AuthShell/AuthShell.module.css';
+import { Field, SelectField, PasswordField, Button } from '../../components/AuthShell/AuthFields';
 
-const ArrowLeftIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="m12 19-7-7 7-7" />
-    <path d="M19 12H5" />
-  </svg>
-);
+const STEPS = ['Company', 'Address', 'Account', 'Password'];
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const MailIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="20" height="16" x="2" y="4" rx="2" />
-    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-  </svg>
-);
-
-const CheckIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-
-const EyeIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
-const EyeOffIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-    <line x1="2" x2="22" y1="2" y2="22" />
-  </svg>
-);
-
-const IllustrationIcon = () => (
-  <svg width="200" height="160" viewBox="0 0 200 160" fill="none">
-    <rect x="10" y="20" width="180" height="120" rx="12" stroke="#F20519" strokeWidth="2" strokeDasharray="6 4" fill="rgba(242,5,25,0.05)" />
-    <rect x="30" y="40" width="60" height="8" rx="4" fill="rgba(242,5,25,0.3)" />
-    <rect x="30" y="56" width="100" height="8" rx="4" fill="rgba(242,5,25,0.15)" />
-    <rect x="30" y="72" width="80" height="8" rx="4" fill="rgba(242,5,25,0.1)" />
-    <rect x="110" y="40" width="60" height="8" rx="4" fill="rgba(242,5,25,0.2)" />
-    <rect x="30" y="100" width="100" height="24" rx="6" fill="rgba(242,5,25,0.12)" />
-    <rect x="140" y="100" width="30" height="24" rx="6" fill="rgba(242,5,25,0.2)" />
-  </svg>
-);
-
-const steps = [
-  { label: 'Company Info' },
-  { label: 'Address' },
-  { label: 'Credentials' },
-  { label: 'Set Password' },
-];
-
-function RegisterPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -81,388 +31,242 @@ function RegisterPage() {
   });
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const [emailVerified, setEmailVerified] = useState(false);
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (cooldown <= 0) return undefined;
+    const t = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  const clearError = (name) =>
+    setErrors((prev) => Object.fromEntries(Object.entries(prev).filter(([key]) => key !== name)));
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    clearError(name);
+    // a different email needs its own verification
+    if (name === 'email' && (emailVerified || otpSent)) {
+      setEmailVerified(false);
+      setOtpSent(false);
+      setOtp('');
+    }
   };
 
   const validateStep = () => {
-    if (step === 1 && !formData.companyName.trim()) {
-      toast.error('Company name is required');
-      return false;
-    }
+    const e = {};
+    if (step === 1 && !formData.companyName.trim()) e.companyName = 'Enter your company name.';
     if (step === 2) {
-      if (!formData.addressLine1.trim()) { toast.error('Address line 1 is required'); return false; }
-      if (!formData.city.trim()) { toast.error('City is required'); return false; }
-      if (!formData.state.trim()) { toast.error('State is required'); return false; }
-      if (!formData.pincode.trim()) { toast.error('Pincode is required'); return false; }
+      if (!formData.addressLine1.trim()) e.addressLine1 = 'Enter your address.';
+      if (!formData.city.trim()) e.city = 'Enter your city.';
+      if (!formData.state.trim()) e.state = 'Choose your state.';
+      if (!formData.pincode.trim()) e.pincode = 'Enter your pincode.';
     }
     if (step === 3) {
-      if (!formData.username.trim()) { toast.error('Username is required'); return false; }
-      if (!formData.mobileNo.trim()) { toast.error('Mobile number is required'); return false; }
-      if (!formData.email.trim()) { toast.error('Email is required'); return false; }
-      if (!emailVerified) { toast.error('Please verify your email before proceeding'); return false; }
+      if (!formData.username.trim()) e.username = 'Enter your name.';
+      if (!formData.mobileNo.trim()) e.mobileNo = 'Enter your mobile number.';
+      if (!EMAIL.test(formData.email.trim())) e.email = 'Enter a valid email address.';
+      else if (!emailVerified) e.email = 'Verify your email with the code before continuing.';
     }
     if (step === 4) {
-      if (!password.trim()) { toast.error('Password is required'); return false; }
-      if (!confirmPassword.trim()) { toast.error('Please confirm your password'); return false; }
-      if (password !== confirmPassword) { toast.error('Passwords do not match'); return false; }
+      if (password.length < 6) e.password = 'Password must be at least 6 characters.';
+      if (confirmPassword !== password) e.confirmPassword = 'Passwords do not match.';
+    }
+    setErrors(e);
+    if (Object.keys(e).length) {
+      document.getElementsByName(Object.keys(e)[0])[0]?.focus();
+      return false;
     }
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async (e) => {
+    e.preventDefault();
     if (!validateStep()) return;
-    if (step === 4) {
-      setItem('registerData', { formData, password });
-      navigate('/pricing');
+    if (step !== 4) {
+      setStep((s) => s + 1);
       return;
     }
-    setStep(prev => prev + 1);
-  };
 
-  const handlePrev = () => {
-    setStep(prev => prev - 1);
+    const registerData = { formData, password };
+    setSubmitting(true);
+    try {
+      if (await fetchPricingEnabled()) {
+        setItem('registerData', registerData);
+        navigate('/pricing');
+        return;
+      }
+      // pricing is switched off: Jobsheet is free, so there is no plan to choose
+      await completeSignUp(registerData, null);
+      toast.success('Welcome to Jobsheet! Your account is ready.');
+      navigate('/dashboard');
+    } catch (err) {
+      setErrors({ confirmPassword: err?.error || err?.message || 'Registration failed. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleSendOtp = async () => {
-    if (!formData.email.trim()) { toast.error('Email is required'); return; }
+    if (!EMAIL.test(formData.email.trim())) {
+      setErrors({ email: 'Enter a valid email address.' });
+      return;
+    }
     setOtpSending(true);
     try {
-      await sendOtp(formData.email);
+      await sendOtp(formData.email.trim());
       setOtpSent(true);
-      toast.success('OTP sent to your email');
+      setOtp('');
+      setCooldown(60);
+      toast.success('A code has been sent to your email.');
     } catch (err) {
-      const msg = err?.message || err?.error || 'Failed to send OTP';
-      toast.error(msg);
+      setErrors({ email: err?.error || err?.message || 'Could not send the code.' });
     } finally {
       setOtpSending(false);
     }
   };
 
   const handleVerifyOtp = async () => {
-    if (!otp.trim() || otp.trim().length !== 6) { toast.error('Enter a valid 6-digit OTP'); return; }
+    if (!/^\d{6}$/.test(otp.trim())) {
+      setErrors({ otp: 'Enter the 6-digit code.' });
+      return;
+    }
     setOtpVerifying(true);
     try {
-      await verifyOtp(formData.email, otp.trim());
+      await verifyOtp(formData.email.trim(), otp.trim());
       setEmailVerified(true);
-      toast.success('Email verified successfully');
+      setErrors({});
+      toast.success('Email verified');
     } catch (err) {
-      const msg = err?.message || err?.error || 'Invalid OTP';
-      toast.error(msg);
+      setErrors({ otp: err?.error || err?.message || 'That code is not right.' });
     } finally {
       setOtpVerifying(false);
     }
   };
 
-  const handleResetOtp = () => {
-    setOtpSent(false);
-    setOtp('');
-    setEmailVerified(false);
-  };
-
-  const renderProgress = () => (
-    <div className={styles.progress}>
-      {steps.map((s, i) => {
-        const stepNum = i + 1;
-        const isActive = stepNum === step;
-        const isCompleted = stepNum < step;
-        return (
-          <div key={s.label} className={styles.stepItem}>
-            <div className={`${styles.stepCircle} ${isActive ? styles.active : ''} ${isCompleted ? styles.completed : ''}`}>
-              {isCompleted ? <CheckIcon /> : stepNum}
-            </div>
-            <span className={`${styles.stepLabel} ${isActive || isCompleted ? styles.stepLabelActive : ''}`}>
-              {s.label}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-
   return (
-    <div className={styles.container}>
-      <div className={styles.orb1} />
-      <div className={styles.orb2} />
-
-      <div className={styles.leftPanel}>
-        <div className={styles.leftContent}>
-          <div className={styles.illustration}>
-            <IllustrationIcon />
+    <AuthShell title="Create your account" subtitle="Register your company to manage job sheets.">
+      <div className={ui.form}>
+        <div>
+          <div className={ui.steps}>
+            {STEPS.map((label, i) => (
+              <div key={label} className={`${ui.step} ${i < step ? ui.stepDone : ''}`} />
+            ))}
           </div>
-          <h2 className={styles.typingHeading}>
-            <TypingText text="Manage jobsheets effortlessly" speed={60} />
-          </h2>
-          <p className={styles.brandDesc}>
-            Register your company and start tracking work orders, assigning technicians, and managing reports all in one place.
+          <p className={ui.stepLabel}>
+            Step {step} of {STEPS.length}: {STEPS[step - 1]}
           </p>
         </div>
-        <div className={styles.orbSmall1} />
-        <div className={styles.orbSmall2} />
-        <div className={styles.gridPattern} />
-      </div>
 
-      <div className={styles.rightPanel}>
-        <button onClick={() => navigate('/login')} className={styles.backBtn}>
-          <ArrowLeftIcon />
-          Back to Sign In
-        </button>
-
-        <div className={styles.brandLogo}>
-          <img src={logo} alt="SwordNex" className={styles.logoImg} />
-        </div>
-
-        <div className={styles.header}>
-          <h1 className={styles.title}>Create an account</h1>
-          <p className={styles.subtitle}>Register your company to manage jobsheets</p>
-        </div>
-
-        {renderProgress()}
-
-        <form className={styles.form}>
-
+        <form className={ui.form} onSubmit={handleNext} noValidate>
           {step === 1 && (
             <>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="companyName"
-                  name="companyName"
-                  placeholder="Company Name"
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="website"
-                  name="website"
-                  placeholder="Website (optional)"
-                  value={formData.website}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="gstin"
-                  name="gstin"
-                  placeholder="GSTIN (optional)"
-                  value={formData.gstin}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
+              <Field label="Company name" required name="companyName" icon={Building2} placeholder="Your company" value={formData.companyName} onChange={handleChange} error={errors.companyName} autoFocus />
+              <Field label="Website (optional)" name="website" icon={Globe} placeholder="www.example.com" value={formData.website} onChange={handleChange} />
+              <Field label="GSTIN (optional)" name="gstin" icon={FileText} placeholder="15-character GSTIN" value={formData.gstin} onChange={handleChange} />
             </>
           )}
 
           {step === 2 && (
             <>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="addressLine1"
-                  name="addressLine1"
-                  placeholder="Address Line 1"
-                  value={formData.addressLine1}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
+              <Field label="Address line 1" required name="addressLine1" icon={MapPin} placeholder="Street address" value={formData.addressLine1} onChange={handleChange} error={errors.addressLine1} autoFocus />
+              <Field label="Address line 2 (optional)" name="addressLine2" placeholder="Area, landmark" value={formData.addressLine2} onChange={handleChange} />
+              <div className={ui.grid2}>
+                <Field label="City" required name="city" placeholder="City" value={formData.city} onChange={handleChange} error={errors.city} />
+                <SelectField label="State" required name="state" value={formData.state} onChange={handleChange} error={errors.state}>
+                  <option value="">Select state</option>
+                  {indianStates.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </SelectField>
               </div>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="addressLine2"
-                  name="addressLine2"
-                  placeholder="Address Line 2"
-                  value={formData.addressLine2}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles.row}>
-                <div className={styles.field}>
-                  <input
-                    type="text"
-                    id="city"
-                    name="city"
-                    placeholder="City"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className={styles.input}
-                  />
-                </div>
-                <StateDropdown
-                  value={formData.state}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="pincode"
-                  name="pincode"
-                  placeholder="Pincode"
-                  value={formData.pincode}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
+              <Field label="Pincode" required name="pincode" inputMode="numeric" maxLength={6} placeholder="6-digit pincode" value={formData.pincode} onChange={(e) => handleChange({ target: { name: 'pincode', value: e.target.value.replace(/\D/g, '') } })} error={errors.pincode} />
             </>
           )}
 
           {step === 3 && (
             <>
-              <div className={styles.field}>
-                <input
-                  type="text"
-                  id="username"
-                  name="username"
-                  placeholder="Username"
-                  value={formData.username}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles.field}>
-                <input
-                  type="tel"
-                  id="mobileNo"
-                  name="mobileNo"
-                  placeholder="Mobile No"
-                  value={formData.mobileNo}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
-              </div>
-              <div className={styles.field}>
-                <input
-                  type="email"
-                  id="regEmail"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={styles.input}
-                  disabled={otpSent}
-                />
-              </div>
+              <Field label="Your name" required name="username" icon={User} autoComplete="name" placeholder="Full name" value={formData.username} onChange={handleChange} error={errors.username} autoFocus />
+              <Field label="WhatsApp number" required name="mobileNo" type="tel" icon={Phone} autoComplete="tel-national" inputMode="numeric" maxLength={10} placeholder="10-digit number" value={formData.mobileNo} onChange={(e) => handleChange({ target: { name: 'mobileNo', value: e.target.value.replace(/\D/g, '') } })} error={errors.mobileNo} />
+              <Field label="Email address" required name="email" type="email" icon={Mail} autoComplete="email" placeholder="name@company.com" value={formData.email} onChange={handleChange} error={errors.email} />
 
-              {!emailVerified && !otpSent && (
-                <button
-                  type="button"
-                  onClick={handleSendOtp}
-                  className={styles.verifyBtn}
-                  disabled={!formData.email.trim() || otpSending}
-                >
-                  <MailIcon />
-                  {otpSending ? 'Sending...' : 'Send OTP'}
-                </button>
-              )}
-
-              {!emailVerified && otpSent && (
-                <>
-                  <p className={styles.otpInfo}>OTP sent to {formData.email}</p>
-                  <div className={styles.otpRow}>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={6}
-                      placeholder="000000"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                      className={styles.otpInput}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleVerifyOtp}
-                      className={styles.verifyOtpBtn}
-                      disabled={otp.trim().length !== 6 || otpVerifying}
-                    >
-                      {otpVerifying ? 'Verifying...' : 'Verify'}
+              {emailVerified ? (
+                <div className={ui.notice} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <CheckCircle2 size={17} /> Email verified
+                </div>
+              ) : otpSent ? (
+                <div className={ui.field}>
+                  <label className={ui.label} htmlFor="otp">
+                    6-digit code
+                  </label>
+                  <input
+                    id="otp"
+                    name="otp"
+                    className={`${ui.input} ${ui.otp} ${errors.otp ? ui.invalid : ''}`}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    placeholder="······"
+                    value={otp}
+                    onChange={(e) => {
+                      setOtp(e.target.value.replace(/\D/g, ''));
+                      clearError('otp');
+                    }}
+                  />
+                  {errors.otp && <p className={ui.errorText}>{errors.otp}</p>}
+                  <div className={ui.grid2} style={{ marginTop: 10 }}>
+                    <Button type="button" loading={otpVerifying} onClick={handleVerifyOtp}>
+                      Verify code
+                    </Button>
+                    <button type="button" className={ui.btnGhost} disabled={otpSending || cooldown > 0} onClick={handleSendOtp}>
+                      {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend code'}
                     </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleResetOtp}
-                    className={styles.changeLink}
-                  >
-                    Change email
-                  </button>
-                </>
-              )}
-
-              {emailVerified && (
-                <div className={styles.verifiedBadge}>
-                  <CheckIcon />
-                  Email Verified
                 </div>
+              ) : (
+                <button type="button" className={ui.btnGhost} disabled={otpSending} onClick={handleSendOtp}>
+                  {otpSending ? 'Sending...' : 'Send verification code'}
+                </button>
               )}
             </>
           )}
 
           {step === 4 && (
             <>
-              <div className={styles.field}>
-                <div className={styles.pwdWrap}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="regPassword"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={styles.input}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className={styles.eyeBtn}
-                    tabIndex={-1}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                </div>
-              </div>
-              <div className={styles.field}>
-                <input
-                  type="password"
-                  id="regConfirmPassword"
-                  placeholder="Confirm Password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={styles.input}
-                />
-              </div>
+              <PasswordField label="Password" required name="password" icon={Lock} autoComplete="new-password" placeholder="At least 6 characters" value={password} onChange={(e) => { setPassword(e.target.value); clearError('password'); }} error={errors.password} autoFocus />
+              <PasswordField label="Confirm password" required name="confirmPassword" icon={Lock} autoComplete="new-password" placeholder="Repeat the password" value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); clearError('confirmPassword'); }} error={errors.confirmPassword} />
             </>
           )}
 
-          <div className={styles.btnRow} style={{ display: step === 3 && !emailVerified ? 'none' : undefined }}>
+          <div className={step > 1 ? ui.grid2 : undefined}>
             {step > 1 && (
-              <button type="button" onClick={handlePrev} className={styles.prevBtn}>
+              <button type="button" className={ui.btnGhost} onClick={() => { setErrors({}); setStep((s) => s - 1); }}>
                 Back
               </button>
             )}
-            <button type="button" onClick={handleNext} className={styles.nextBtn}>
-              {step === 4 ? 'Continue to Pricing' : 'Next'}
-            </button>
+            <Button type="submit" loading={submitting}>
+              {step === STEPS.length ? 'Create account' : 'Continue'}
+            </Button>
           </div>
         </form>
-
       </div>
-    </div>
+
+      <p className={ui.switchLine}>
+        Already have an account?{' '}
+        <Link to="/login" className={ui.link}>
+          Sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }
-
-export default RegisterPage;

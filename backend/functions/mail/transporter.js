@@ -1,39 +1,33 @@
-// // utils/mail/transporter.js
-
-// import nodemailer from "nodemailer";
-
-// const transporter = nodemailer.createTransport({
-//   service: "gmail",
-
-//   auth: {
-//     user: process.env.EMAIL_USER,
-//     pass: process.env.EMAIL_PASS,
-//   },
-// });
-
-// export default transporter;
-
 import nodemailer from "nodemailer";
 import { config } from "../config/envConfig.js";
 
-const transporter = nodemailer.createTransport({
+/* Created lazily and ONLY from configuration - there are no built-in credentials.
+   TLS certificates are verified. */
+let transport = null;
 
-  host: "smtp.office365.com",
+const getTransport = () => {
+  if (transport) return transport;
 
-  port: 587,
+  const host = config.smtpHost || "smtp.office365.com";
+  const port = config.smtpPort;
+  const user = config.emailUser;
+  const pass = config.emailPass;
 
-  secure: false,
+  if (!user || !pass) {
+    throw new Error("SMTP is not configured (SMTP_USER / SMTP_PASS)");
+  }
 
-  auth: {
+  transport = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+  return transport;
+};
 
-    user: config.emailUser,
-
-    pass: config.emailPass,
-  },
-
-  tls: {
-    ciphers: "SSLv3",
-  },
-});
+const transporter = {
+  sendMail: (options) => getTransport().sendMail(options),
+};
 
 export default transporter;

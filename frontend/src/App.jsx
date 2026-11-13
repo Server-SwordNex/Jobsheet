@@ -5,6 +5,8 @@ console.log('localStorage user:', JSON.parse(localStorage.getItem('user')));
 import SearchPage from "./pages/SearchPage/SearchPage.jsx"
 import LoginPage from "./pages/LoginPage/LoginPage.jsx"
 import RegisterPage from "./pages/RegisterPage/RegisterPage.jsx"
+import ForgotPasswordPage from "./pages/ForgotPasswordPage/ForgotPasswordPage.jsx"
+import ActivatePage from "./pages/ActivatePage/ActivatePage.jsx"
 import GoogleRegisterPage from "./pages/GoogleRegisterPage/GoogleRegisterPage.jsx"
 import PricingPage from './pages/PricingPage/PricingPage.jsx'
 import PricingInfo from './pages/PricingInfo/PricingInfo.jsx'
@@ -21,6 +23,7 @@ import SubscriptionPage from './pages/SubscriptionPage/SubscriptionPage.jsx'
 import Layout from "./components/Layout/Layout.jsx"
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx'
 import SuperAdminRoute from './components/SuperAdminRoute/SuperAdminRoute.jsx'
+import { RequireFeature } from './context/EntitlementsContext.jsx'
 import SuperAdminLayout from './pages/SuperAdminDashboard/SuperAdminLayout/SuperAdminLayout.jsx'
 import SuperAdminDashboard from './pages/SuperAdminDashboard/SuperAdminDashboard/SuperAdminDashboard.jsx'
 import SuperAdminPlans from './pages/SuperAdminDashboard/SuperAdminPlans/SuperAdminPlans.jsx'
@@ -61,6 +64,8 @@ function App() {
       <Route path="/search" element={<SearchPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/activate" element={<ActivatePage />} />
       <Route path="/google-register" element={<GoogleRegisterPage />} />
       <Route path="/superadmin/login" element={<SuperAdminLogin />} />
       <Route path="/admin/login" element={<Navigate to="/superadmin/login" replace />} />
@@ -75,7 +80,7 @@ function App() {
         <Route path="/create-job-sheet/new" element={<CreateJobSheet />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/technicians" element={<Technicians />} />
-        <Route path="/reports" element={<Reports />} />
+        <Route path="/reports" element={<RequireFeature feature="reports" what="Reports"><Reports /></RequireFeature>} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/subscription" element={<SubscriptionPage />} />
       </Route>

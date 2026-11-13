@@ -8,6 +8,7 @@ import {
   remove,
   getAnnouncementsByRole
 } from "../controllers/announcementController.js";
+import { requireAuth } from "../middleware/authMiddleware.js";
 import { requireAdminAuth } from "../middleware/adminAuthMiddleware.js";
 
 const router = express.Router();
@@ -36,7 +37,7 @@ router.put("/api/toggle-announcement/:id", requireAdminAuth, toggle);
 router.delete("/api/delete-announcement/:id", requireAdminAuth, remove);
 
 
-router.get("/api/announcements", getAnnouncementsByRole);   
+router.get("/api/announcements", requireAuth, getAnnouncementsByRole);   
 
 
 export default router;

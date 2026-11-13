@@ -123,6 +123,14 @@ export function verifyOtp(email, otp) {
   return api.post(AUTH.VERIFY_OTP, { email, otp }, { skipAuthRedirect: true });
 }
 
+export function getPlatformSettings() {
+  return api.get('/api/superadmin/settings');
+}
+
+export function updatePlatformSettings(body) {
+  return api.put('/api/superadmin/settings', body);
+}
+
 export const SUPERADMIN = {
   USERS_DETAILS: '/api/superadmin/users/all-details',
 };

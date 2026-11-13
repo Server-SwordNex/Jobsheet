@@ -46,12 +46,6 @@ export default function Security() {
   const token =
     auth?.token;
 
-  const email =
-    user?.email;
-
-  const uid =
-    user?.uid;
-
   /* =========================
      HANDLE INPUT
   ========================== */
@@ -240,7 +234,7 @@ export default function Security() {
          API CALL
       ========================== */
 
-      const data = await changePassword(email, newPassword, uid);
+      const data = await changePassword(currentPassword, newPassword);
 
       if (!data || !data.success) {
         throw new Error(data?.message || "Failed to change password");
@@ -311,8 +305,10 @@ export default function Security() {
 
       console.error(error);
 
+      // the API rejects with { error } (see api/client.js), not an Error object
       toast.error(
-        error.message ||
+        error?.error ||
+        error?.message ||
         "Failed to change password"
       );
 

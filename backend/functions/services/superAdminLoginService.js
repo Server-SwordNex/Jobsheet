@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { config } from "../config/envConfig.js";
+import { safeEqual } from "../utils/safeEqual.js";
 
 export async function validateSuperAdmin(email, password) {
   const cleanEmail = (email || '').trim().toLowerCase();
@@ -14,7 +15,9 @@ export async function validateSuperAdmin(email, password) {
   }
 
   // 1. Check if credentials match configured Admin
-  if (cleanEmail === cleanConfigEmail && cleanPassword === cleanConfigPassword) {
+  const emailOk = safeEqual(cleanEmail, cleanConfigEmail);
+  const passwordOk = safeEqual(cleanPassword, cleanConfigPassword);
+  if (emailOk && passwordOk) {
     return true;
   }
 
@@ -27,5 +30,6 @@ export async function validateSuperAdmin(email, password) {
 export function generateToken(payload) {
   return jwt.sign(payload, config.jwtSecret, {
     expiresIn: config.jwtExpiresIn,
+    algorithm: 'HS256',
   });
 }

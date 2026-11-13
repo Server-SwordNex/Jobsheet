@@ -1,47 +1,33 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
-// const {setGlobalOptions} = require("firebase-functions");
-// const {onRequest} = require("firebase-functions/https");
-// const logger = require("firebase-functions/logger");
-
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-// setGlobalOptions({ maxInstances: 10 });
-
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
-
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
-
-
-
 import { onRequest } from "firebase-functions/v2/https";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import app from "./server.js";
+import { runSubscriptionReminderService } from "./cronJobs/cronService/subscriptionReminderService.js";
 
 export const jobsheetApi = onRequest(
   {
-    region: "us-central1",
-    timeoutSeconds: 540,
-    memory: "1GiB",
+    region: "asia-south1",
+    timeoutSeconds: 300,
+    memory: "512MiB",
+    maxInstances: 10,
     invoker: "public",
+    // the one super admin login shared by every SwordNex app (existing secrets, same as Invoice)
+    secrets: ["SWORDNEX_SUPERADMIN_USERNAME", "SWORDNEX_SUPERADMIN_PASSWORD"],
   },
   app
+);
+
+// Daily subscription reminders / expiry. Runs on Cloud Scheduler so it fires exactly
+// once per day regardless of how many API instances exist (an in-process node-cron
+// job would not run while the API is scaled to zero, and would run once per instance).
+export const jobsheetReminders = onSchedule(
+  {
+    region: "asia-south1",
+    schedule: "0 9 * * *",
+    timeZone: "Asia/Kolkata",
+    timeoutSeconds: 540,
+    memory: "512MiB",
+  },
+  async () => {
+    await runSubscriptionReminderService();
+  }
 );

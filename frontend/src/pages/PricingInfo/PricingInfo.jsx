@@ -13,10 +13,10 @@ export default function PricingInfo() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className={styles.container}><p className={styles.loading}>Loading...</p></div>;
+  if (loading) return <div className={`${styles.container} publicTheme`}><p className={styles.loading}>Loading...</p></div>;
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} publicTheme`}>
       <h1 className={styles.heading}>Pricing Plans</h1>
       {plans.length === 0 ? (
         <p className={styles.empty}>No plans available.</p>

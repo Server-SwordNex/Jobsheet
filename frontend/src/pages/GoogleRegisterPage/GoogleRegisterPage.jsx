@@ -22,13 +22,13 @@ const CheckIcon = () => (
 
 const IllustrationIcon = () => (
   <svg width="200" height="160" viewBox="0 0 200 160" fill="none">
-    <rect x="10" y="20" width="180" height="120" rx="12" stroke="#F20519" strokeWidth="2" strokeDasharray="6 4" fill="rgba(242,5,25,0.05)" />
-    <rect x="30" y="40" width="60" height="8" rx="4" fill="rgba(242,5,25,0.3)" />
-    <rect x="30" y="56" width="100" height="8" rx="4" fill="rgba(242,5,25,0.15)" />
-    <rect x="30" y="72" width="80" height="8" rx="4" fill="rgba(242,5,25,0.1)" />
-    <rect x="110" y="40" width="60" height="8" rx="4" fill="rgba(242,5,25,0.2)" />
-    <rect x="30" y="100" width="100" height="24" rx="6" fill="rgba(242,5,25,0.12)" />
-    <rect x="140" y="100" width="30" height="24" rx="6" fill="rgba(242,5,25,0.2)" />
+    <rect x="10" y="20" width="180" height="120" rx="12" stroke="#9333EA" strokeWidth="2" strokeDasharray="6 4" fill="rgba(147,51,234,0.05)" />
+    <rect x="30" y="40" width="60" height="8" rx="4" fill="rgba(147,51,234,0.3)" />
+    <rect x="30" y="56" width="100" height="8" rx="4" fill="rgba(147,51,234,0.15)" />
+    <rect x="30" y="72" width="80" height="8" rx="4" fill="rgba(147,51,234,0.1)" />
+    <rect x="110" y="40" width="60" height="8" rx="4" fill="rgba(147,51,234,0.2)" />
+    <rect x="30" y="100" width="100" height="24" rx="6" fill="rgba(147,51,234,0.12)" />
+    <rect x="140" y="100" width="30" height="24" rx="6" fill="rgba(147,51,234,0.2)" />
   </svg>
 );
 
@@ -105,7 +105,7 @@ function GoogleRegisterPage() {
   );
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} publicTheme`}>
       <div className={styles.orb1} />
       <div className={styles.orb2} />
 

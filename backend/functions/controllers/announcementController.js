@@ -1,9 +1,10 @@
 import {
+  getAnnouncementsForUserService,
   createAnnouncementService,
   getAnnouncementsService,
   toggleAnnouncementService,
   deleteAnnouncementService,
-  getAnnouncementsByRoleService,
+
 } from "../services/announcementService.js";
 
 /* =========================
@@ -22,7 +23,7 @@ export const createAnnouncement = async (req, res) => {
   } catch (err) {
     console.error("CREATE ANNOUNCEMENT ERROR:", err);
 
-    return res.status(500).json({
+    return res.status(err.status || 500).json({
       success: false,
       message: err.message || "Internal Server Error",
     });
@@ -122,16 +123,8 @@ export const remove = async (req, res) => {
 
 export const getAnnouncementsByRole = async (req, res) => {
   try {
-    const { role } = req.query;
-
-    if (!role) {
-      return res.status(400).json({
-        success: false,
-        message: "Role is required",
-      });
-    }
-
-    const result = await getAnnouncementsByRoleService(role);
+    // audience comes from the signed-in account, never from a query parameter
+    const result = await getAnnouncementsForUserService(req.user);
 
     return res.status(200).json({
       success: true,
@@ -141,7 +134,7 @@ export const getAnnouncementsByRole = async (req, res) => {
   } catch (err) {
     console.error("GET ANNOUNCEMENTS ERROR:", err);
 
-    return res.status(500).json({
+    return res.status(err.status || 500).json({
       success: false,
       message: err.message || "Failed to fetch announcements",
     });

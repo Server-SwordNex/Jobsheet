@@ -1,272 +1,178 @@
-import React, { useState, useEffect } from "react";
-import styles from "./SuperAdminAnnouncements.module.css";
-import { toast } from "react-toastify";
-import { Plus } from "lucide-react";
+import { useState } from 'react';
+import { toast } from 'react-toastify';
+import { Send } from 'lucide-react';
 import {
   getAllAnnouncements,
   createAnnouncement,
   toggleAnnouncement,
   deleteAnnouncement,
-} from "../../../api/endpoints";
+} from '../../../api/endpoints';
+import c from '../console/console.module.css';
+import { useApi, errMsg, formatDateTime } from '../console/helpers';
+import { PageHeader, Card, Badge, Loading, ErrorNotice, Empty, Field } from '../console/ui';
+
+const TYPES = ['General', 'Feature Update', 'Maintenance', 'Billing Reminder'];
+const TARGETS = ['All Users', 'Admin Only', 'Active Users', 'Expired Users'];
+const PRIORITIES = ['Low', 'Medium', 'High'];
+
+const BLANK = {
+  title: '',
+  message: '',
+  type: 'General',
+  target: 'All Users',
+  priority: 'Medium',
+  buttonText: '',
+  buttonLink: '',
+};
 
 export default function SuperAdminAnnouncements() {
-  const [announcements, setAnnouncements] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const { data, error, loading, reload } = useApi(() => getAllAnnouncements('superadmin'));
+  const [form, setForm] = useState(BLANK);
+  const [sending, setSending] = useState(false);
 
-  const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
 
-  const [newAnnouncement, setNewAnnouncement] = useState({
-    title: "",
-    message: "",
-    type: "Maintenance",
-    target: "All Users",
-    priority: "Medium",
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setNewAnnouncement((prev) => ({ ...prev, [name]: value }));
-  };
-
-  /* ================= GET ALL ================= */
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const role = "superadmin";
-        const data = await getAllAnnouncements(role);
-        setAnnouncements(data.data || []);
-      } catch (err) {
-        console.error("GET ERROR:", err);
-        toast.error(err.message || err.error || "Failed to fetch announcements");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, []);
-
-  /* ================= CREATE ================= */
-  const handleCreate = async () => {
-    if (!newAnnouncement.title.trim()) {
-      return toast.error("Title is required");
+  const send = async (e) => {
+    e.preventDefault();
+    if (!form.title.trim() || !form.message.trim()) return toast.error('Add a title and a message');
+    if (form.buttonLink && !/^https?:\/\//i.test(form.buttonLink)) {
+      return toast.error('The button link must start with https://');
     }
-    if (!newAnnouncement.message.trim()) {
-      return toast.error("Message is required");
-    }
+    if (!window.confirm(`Send this announcement to: ${form.target}? It is also emailed to them.`)) return;
 
+    setSending(true);
     try {
-      setCreating(true);
-
-      const payload = {
-        ...newAnnouncement,
-      };
-
-      const data = await createAnnouncement(payload);
-
-      setAnnouncements((prev) => [data.data, ...prev]);
-      setIsModalOpen(false);
-      setNewAnnouncement({
-        title: "",
-        message: "",
-        type: "Maintenance",
-        target: "All Users",
-        priority: "Medium",
-      });
-      toast.success("Announcement created successfully ✅");
+      await createAnnouncement(form);
+      toast.success('Announcement sent');
+      setForm(BLANK);
+      reload();
     } catch (err) {
-      console.error("CREATE ERROR:", err);
-      toast.error(err.message || err.error || "Create failed");
+      toast.error(errMsg(err));
     } finally {
-      setCreating(false);
+      setSending(false);
     }
   };
 
-  /* ================= TOGGLE ================= */
-  const handleToggleStatus = async (id) => {
+  const toggle = async (id) => {
     try {
-      setActionLoadingId(id);
-
-      const data = await toggleAnnouncement(id);
-
-      setAnnouncements((prev) =>
-        prev.map((a) =>
-          a.id === id || a._id === id
-            ? { ...a, status: data.data?.status || a.status }
-            : a
-        )
-      );
-      toast.success("Status updated successfully ✅");
+      await toggleAnnouncement(id);
+      reload();
     } catch (err) {
-      console.error("TOGGLE ERROR:", err);
-      toast.error(err.message || err.error || "Toggle failed");
-    } finally {
-      setActionLoadingId(null);
+      toast.error(errMsg(err));
     }
   };
 
-  /* ================= DELETE ================= */
-  const handleDeleteAnnouncement = async (id, title) => {
-    if (!window.confirm(`Are you sure you want to delete the announcement "${title}"?`)) {
-      return;
-    }
-
+  const remove = async (id) => {
+    if (!window.confirm('Delete this announcement? Users will no longer see it.')) return;
     try {
-      setActionLoadingId(id);
-
       await deleteAnnouncement(id);
-
-      setAnnouncements((prev) => prev.filter((a) => a.id !== id && a._id !== id));
-      toast.success("Deleted successfully ✅");
+      toast.success('Announcement deleted');
+      reload();
     } catch (err) {
-      console.error("DELETE ERROR:", err);
-      toast.error(err.message || err.error || "Delete failed");
-    } finally {
-      setActionLoadingId(null);
+      toast.error(errMsg(err));
     }
   };
+
+  const list = data?.data || [];
 
   return (
-    <div className={styles.container}>
-      {/* HEADER */}
-      <div className={styles.header}>
-        <div>
-          <h2 className={styles.heading}>Announcements</h2>
-          <p className={styles.subtitle}>Create and manage announcements.</p>
-        </div>
+    <div className={c.page}>
+      <PageHeader title="Announcements" subtitle="Notices shown in every business's bell menu and sent by email." />
 
-        <button className={styles.addBtn} onClick={() => setIsModalOpen(true)}>
-          <Plus size={18} />
-          Create
-        </button>
-      </div>
-
-      {/* ================= LOADER ================= */}
-      {loading ? (
-        <div className={styles.loaderWrapper}>
-          <div className={styles.loader}></div>
-          <p>Loading announcements...</p>
-        </div>
-      ) : (
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Type</th>
-              <th>Target</th>
-              <th>Priority</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {announcements.length > 0 ? (
-              announcements.map((a) => {
-                const id = a.id || a._id;
-                return (
-                  <tr key={id}>
-                    <td>{a.title}</td>
-                    <td>{a.type}</td>
-                    <td>{a.target}</td>
-                    <td>{a.priority}</td>
-                    <td>{a.status}</td>
-
-                    <td>
-                      <div className={styles.actionButtons}>
-                        <button
-                          className={styles.toggleBtn}
-                          onClick={() => handleToggleStatus(id)}
-                          disabled={actionLoadingId === id}
-                        >
-                          {actionLoadingId === id ? "..." : "Toggle"}
-                        </button>
-
-                        <button
-                          className={styles.deleteBtn}
-                          onClick={() => handleDeleteAnnouncement(id, a.title)}
-                          disabled={actionLoadingId === id}
-                        >
-                          {actionLoadingId === id ? "..." : "Delete"}
-                        </button>
-                      </div>
-                    </td>
+      <div className={c.grid2}>
+        <Card title="Previous announcements" note={`${list.length} in total`}>
+          {error && <ErrorNotice message={error} onRetry={reload} />}
+          {loading ? (
+            <Loading />
+          ) : list.length === 0 ? (
+            <Empty>You have not sent any announcement yet.</Empty>
+          ) : (
+            <div className={c.tableWrap}>
+              <table className={c.table}>
+                <thead>
+                  <tr>
+                    <th>Announcement</th>
+                    <th>Audience</th>
+                    <th>Status</th>
+                    <th />
                   </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan="6" style={{ textAlign: "center", padding: "20px" }}>
-                  No announcements found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      )}
-
-      {/* ================= CREATE MODAL ================= */}
-      {isModalOpen && (
-        <div className={styles.overlay} onClick={() => setIsModalOpen(false)}>
-          <div className={styles.formCard} onClick={(e) => e.stopPropagation()}>
-            <h3>Create Announcement</h3>
-
-            <div className={styles.grid}>
-              <input
-                name="title"
-                placeholder="Title"
-                value={newAnnouncement.title}
-                onChange={handleChange}
-              />
-
-              <textarea
-                name="message"
-                placeholder="Message"
-                value={newAnnouncement.message}
-                onChange={handleChange}
-              />
-
-              <select name="type" value={newAnnouncement.type} onChange={handleChange}>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Feature Update">Feature Update</option>
-                <option value="Billing Reminder">Billing Reminder</option>
-                <option value="General">General</option>
-              </select>
-
-              <select name="target" value={newAnnouncement.target} onChange={handleChange}>
-                <option value="All Users">All Users</option>
-                <option value="Admin Only">Admin Only</option>
-              </select>
-
-              <select name="priority" value={newAnnouncement.priority} onChange={handleChange}>
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
+                </thead>
+                <tbody>
+                  {list.map((a) => (
+                    <tr key={a.id}>
+                      <td>
+                        <span className={c.strong}>{a.title}</span>
+                        <span className={c.sub}>
+                          {a.type} · {a.priority} · {formatDateTime(a.createdAt)}
+                        </span>
+                      </td>
+                      <td>{a.target}</td>
+                      <td>
+                        <Badge tone={a.status === 'Active' ? 'ok' : ''}>{a.status}</Badge>
+                      </td>
+                      <td className={c.num}>
+                        <div className={c.row} style={{ justifyContent: 'flex-end' }}>
+                          <button className={`${c.btn} ${c.ghost} ${c.small}`} onClick={() => toggle(a.id)}>
+                            {a.status === 'Active' ? 'Hide' : 'Show'}
+                          </button>
+                          <button className={`${c.btn} ${c.danger} ${c.small}`} onClick={() => remove(a.id)}>
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          )}
+        </Card>
 
-            <div className={styles.actionsRow}>
-              <button
-                className={styles.saveBtn}
-                onClick={handleCreate}
-                disabled={creating}
-              >
-                {creating ? "Sending..." : "Send Announcement"}
-              </button>
-
-              <button
-                className={styles.cancelBtn}
-                onClick={() => setIsModalOpen(false)}
-              >
-                Cancel
-              </button>
+        <Card title="New announcement" pad>
+          <form className={c.form} onSubmit={send}>
+            <Field label="Title">
+              <input className={c.input} value={form.title} onChange={set('title')} maxLength={120} />
+            </Field>
+            <Field label="Message">
+              <textarea className={c.textarea} value={form.message} onChange={set('message')} maxLength={1500} />
+            </Field>
+            <div className={c.cols2}>
+              <Field label="Type">
+                <select className={c.select} style={{ width: '100%' }} value={form.type} onChange={set('type')}>
+                  {TYPES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Priority">
+                <select className={c.select} style={{ width: '100%' }} value={form.priority} onChange={set('priority')}>
+                  {PRIORITIES.map((t) => (
+                    <option key={t}>{t}</option>
+                  ))}
+                </select>
+              </Field>
             </div>
-          </div>
-        </div>
-      )}
+            <Field label="Send to">
+              <select className={c.select} style={{ width: '100%' }} value={form.target} onChange={set('target')}>
+                {TARGETS.map((t) => (
+                  <option key={t}>{t}</option>
+                ))}
+              </select>
+            </Field>
+            <div className={c.cols2}>
+              <Field label="Button text (optional)">
+                <input className={c.input} value={form.buttonText} onChange={set('buttonText')} placeholder="Open dashboard" />
+              </Field>
+              <Field label="Button link (optional)">
+                <input className={c.input} value={form.buttonLink} onChange={set('buttonLink')} placeholder="https://..." />
+              </Field>
+            </div>
+            <button className={c.btn} disabled={sending}>
+              <Send size={16} /> {sending ? 'Sending...' : 'Send announcement'}
+            </button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }
