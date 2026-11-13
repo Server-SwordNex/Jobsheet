@@ -12,6 +12,68 @@ const CheckIcon = () => (
   </svg>
 );
 
+const defaultPlans = [
+  {
+    id: 'free',
+    name: 'Free',
+    billingType: 'free',
+    price: 0,
+    tagLine: 'Perfect for small teams getting started',
+    jobSheetLimit: 25,
+    staffLimit: 2,
+    subuserLimit: 1,
+    popular: false,
+    features: ['Up to 25 Job Sheets / mo', 'Up to 2 Service Technicians', '1 Sub-user account', 'Standard PDF generation', 'Basic reports & dashboard'],
+  },
+  {
+    id: 'starter-monthly',
+    name: 'Starter Monthly',
+    billingType: 'monthly',
+    price: 499,
+    tagLine: 'Great for growing service centers',
+    jobSheetLimit: 100,
+    staffLimit: 5,
+    subuserLimit: 3,
+    popular: false,
+    features: ['Up to 100 Job Sheets / mo', 'Up to 5 Service Technicians', '3 Sub-user accounts', 'Custom branding & logo', 'Advanced reporting & exports'],
+  },
+  {
+    id: 'pro-monthly',
+    name: 'Pro Monthly',
+    billingType: 'monthly',
+    price: 999,
+    tagLine: 'Full access with priority support',
+    jobSheetLimit: 500,
+    staffLimit: 15,
+    subuserLimit: 10,
+    popular: true,
+    features: ['Up to 500 Job Sheets / mo', 'Up to 15 Service Technicians', '10 Sub-user accounts', 'Custom branding & watermark', 'Customer search & tracking', '24/7 Priority support'],
+  },
+  {
+    id: 'starter-yearly',
+    name: 'Starter Yearly',
+    billingType: 'yearly',
+    price: 4999,
+    tagLine: 'Annual value pack for established providers',
+    jobSheetLimit: 200,
+    staffLimit: 10,
+    subuserLimit: 5,
+    popular: false,
+    features: ['Up to 200 Job Sheets / mo', 'Up to 10 Service Technicians', '5 Sub-user accounts', 'Custom branding & invoice template', 'Save ~20% with annual billing'],
+  },
+  {
+    id: 'pro-yearly',
+    name: 'Pro Yearly',
+    billingType: 'yearly',
+    price: 9999,
+    tagLine: 'Ultimate enterprise power',
+    jobSheetLimit: 2000,
+    staffLimit: 50,
+    subuserLimit: 25,
+    popular: false,
+    features: ['Unlimited Job Sheets', 'Up to 50 Service Technicians', '25 Sub-user accounts', 'Custom domain & branding', 'Dedicated Account Manager'],
+  },
+];
 
 function PricingPage() {
   const navigate = useNavigate();
@@ -19,45 +81,39 @@ function PricingPage() {
   const [plans, setPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [plansLoading, setPlansLoading] = useState(true);
-  const [billingTab, setBillingTab] = useState('monthly');
   const [submitting, setSubmitting] = useState(false);
+
+  const isLoggedIn = Boolean(getItem('token') && getItem('user'));
 
   useEffect(() => {
     const registerData = getItem('registerData');
-    if (!registerData?.formData || (!registerData?.password && !registerData?.isGoogleAuth)) {
+    if (!isLoggedIn && (!registerData?.formData || (!registerData?.password && !registerData?.isGoogleAuth))) {
       navigate('/register', { replace: true });
       return;
     }
+
     getPlans()
       .then((data) => {
-        const list = Array.isArray(data) ? data : [];
+        const list = Array.isArray(data) && data.length > 0 ? data : defaultPlans;
         setPlans(list);
-        const monthly = list.filter((p) => p.billingType === 'free' || p.billingType === 'monthly');
-        setSelectedPlan(monthly.find((p) => p.billingType === 'free') || monthly[0] || null);
+        setSelectedPlan(list.find((p) => p.popular) || list[0] || null);
       })
       .catch(() => {
-        setPlans([]);
-        setSelectedPlan(null);
+        setPlans(defaultPlans);
+        setSelectedPlan(defaultPlans[0]);
       })
       .finally(() => setPlansLoading(false));
-  }, []);
+  }, [isLoggedIn, navigate]);
 
-  const handleTabChange = (tab) => {
-    setBillingTab(tab);
-    const filtered = plans.filter((p) =>
-      tab === 'monthly'
-        ? p.billingType === 'free' || p.billingType === 'monthly'
-        : p.billingType === 'yearly'
-    );
-    const currentId = selectedPlan?._id || selectedPlan?.id;
-    const stillAvailable = filtered.some((p) => (p._id || p.id) === currentId);
-    if (!stillAvailable) setSelectedPlan(filtered[0] || null);
-  };
-
-  const handleCreateAccount = async (plan) => {
-    console.log('Plan details:', JSON.stringify(plan, null, 2));
+  const handleAction = async (plan) => {
     const planId = plan?._id || plan?.id;
     if (!planId) { toast.error('Invalid plan'); return; }
+
+    if (isLoggedIn) {
+      navigate('/subscription');
+      return;
+    }
+
     const registerData = getItem('registerData');
     if (!registerData?.formData || (!registerData?.password && !registerData?.isGoogleAuth)) {
       toast.error('Registration data not found. Please register again.');
@@ -84,7 +140,7 @@ function PricingPage() {
     if (password) payload.password = password;
     if (formData.username) payload.username = formData.username;
     if (formData.mobileNo) payload.mobileNo = formData.mobileNo;
-    console.log('Register payload:', JSON.stringify(payload, null, 2));
+
     try {
       const res = await api.post('/api/auth/register', payload, { skipAuthRedirect: true });
 
@@ -101,116 +157,96 @@ function PricingPage() {
     }
   };
 
-  const filteredPlans = plans.filter((p) =>
-    billingTab === 'monthly'
-      ? p.billingType === 'free' || p.billingType === 'monthly'
-      : p.billingType === 'yearly'
-  );
-
   return (
     <div className={styles.page}>
       <div className={styles.container}>
         <div className={styles.topRow}>
           <div className={styles.topLeft}>
             <h1 className={styles.title}>Choose a Plan</h1>
-            <p className={styles.subtitle}>Select a plan to get started with SwordNex Jobsheet</p>
-          </div>
-          <div className={styles.tabs}>
-            <button
-              type="button"
-              onClick={() => handleTabChange('monthly')}
-              className={`${styles.tab} ${billingTab === 'monthly' ? styles.tabActive : ''}`}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTabChange('yearly')}
-              className={`${styles.tab} ${billingTab === 'yearly' ? styles.tabActive : ''}`}
-            >
-              Yearly
-            </button>
+            <p className={styles.subtitle}>Select an available plan to get started with SwordNex Jobsheet</p>
           </div>
         </div>
 
         {plansLoading ? (
           <p className={styles.loading}>Loading plans...</p>
         ) : (
-          <>
+          <div className={styles.horizontalWrapper}>
+            <div className={styles.grid}>
+              {plans.map((plan) => {
+                const id = plan._id || plan.id;
+                const isSelected = (selectedPlan?._id || selectedPlan?.id) === id;
+                const isYearly = plan.billingType === 'yearly';
+                const isFree = plan.billingType === 'free' || Number(plan.price) === 0;
 
-            {filteredPlans.length === 0 ? (
-              <p className={styles.empty}>No {billingTab} plans available.</p>
-            ) : (
-              <div className={styles.grid}>
-                  {filteredPlans.map((plan) => {
-                    const id = plan._id || plan.id;
-                    const isSelected = (selectedPlan?._id || selectedPlan?.id) === id;
-                    return (
-                      <div key={id} className={styles.cardWrapper}>
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setSelectedPlan(plan)}
-                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedPlan(plan); }}
-                          className={`${styles.card} ${isSelected ? styles.cardSelected : ''}`}
-                        >
-                          {plan.popular && (
-                            <div className={styles.popular}>
-                              <span className={styles.popularBadge}>Popular</span>
-                            </div>
-                          )}
-
-                          <div className={styles.cardBody}>
-                            <h5 className={styles.cardName}>{plan.name}</h5>
-
-                            {plan.billingType === 'free' ? (
-                              <span className={styles.cardPrice}>Free</span>
-                            ) : (
-                              <>
-                                <span className={styles.cardPrice}>
-                                  ₹{plan.price}
-                                </span>
-                                <span className={styles.cardInterval}>
-                                  {billingTab === 'yearly' ? 'per year' : 'per month'}
-                                </span>
-                              </>
-                            )}
-
-
-                          
-
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); handleCreateAccount(plan); }}
-                              disabled={submitting}
-                              className={styles.cta}
-                            >
-                              <div className={styles.ctaSlide} />
-                              <span className={styles.ctaText}>
-                                {submitting ? <span className={styles.spinner} /> : 'Create Account'}
-                              </span>
-                            </button>
-                          </div>
-
-                          {plan.features?.length > 0 && (
-                            <ul className={styles.features}>
-                              {plan.features.map((f, i) => (
-                                <li key={i} className={styles.feature}>
-                                  <span className={styles.featureIcon}>
-                                    <CheckIcon />
-                                  </span>
-                                  <span className={styles.featureText}>{f}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
+                return (
+                  <div key={id} className={styles.cardWrapper}>
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedPlan(plan)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedPlan(plan); }}
+                      className={`${styles.card} ${isSelected ? styles.cardSelected : ''}`}
+                    >
+                      {plan.popular && (
+                        <div className={styles.popular}>
+                          <span className={styles.popularBadge}>Popular</span>
                         </div>
+                      )}
+
+                      <div className={styles.cardBody}>
+                        <div className={styles.billingBadge}>
+                          {isFree ? 'Free' : isYearly ? 'Yearly' : 'Monthly'}
+                        </div>
+                        <h5 className={styles.cardName}>{plan.name}</h5>
+
+                        {isFree ? (
+                          <span className={styles.cardPrice}>Free</span>
+                        ) : (
+                          <>
+                            <span className={styles.cardPrice}>₹{plan.price}</span>
+                            <span className={styles.cardInterval}>
+                              {isYearly ? 'per year' : 'per month'}
+                            </span>
+                          </>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleAction(plan); }}
+                          disabled={submitting}
+                          className={styles.cta}
+                        >
+                          <div className={styles.ctaSlide} />
+                          <span className={styles.ctaText}>
+                            {submitting ? (
+                              <span className={styles.spinner} />
+                            ) : isLoggedIn ? (
+                              'Select Plan'
+                            ) : (
+                              'Create Account'
+                            )}
+                          </span>
+                        </button>
                       </div>
-                    );
-                  })}
-              </div>
-            )}
-          </>
+
+                      {plan.features?.length > 0 && (
+                        <ul className={styles.features}>
+                          {plan.features.map((f, i) => (
+                            <li key={i} className={styles.feature}>
+                              <span className={styles.featureIcon}>
+                                <CheckIcon />
+                              </span>
+                              <span className={styles.featureText}>{f}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
     </div>

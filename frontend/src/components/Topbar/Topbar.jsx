@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { PanelLeft, Megaphone, LogOut } from 'lucide-react';
-import { getItem, removeItem, setItem } from '../../utils/storage';
+import { PanelLeft, Megaphone, LogOut, CreditCard } from 'lucide-react';
+import { getItem, removeItem } from '../../utils/storage';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../../api/auth';
 import styles from './Topbar.module.css';
@@ -16,20 +16,6 @@ function Topbar({ onToggleSidebar }) {
   const email = user?.email || auth?.email || '';
   const role = user?.role || auth?.role || '';
   const initial = displayName.charAt(0).toUpperCase();
-
-  const handleToggleRole = () => {
-    const userObj = getItem('user') || {};
-    const authObj = getItem('auth') || {};
-    const newRole = role === 'team' ? 'admin' : 'team';
-
-    userObj.role = newRole;
-    authObj.role = newRole;
-
-    setItem('user', userObj);
-    setItem('auth', authObj);
-
-    window.location.reload();
-  };
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -63,10 +49,6 @@ function Topbar({ onToggleSidebar }) {
         </button>
       </div>
       <div className={styles.right}>
-        <button className={styles.roleToggleBtn} onClick={handleToggleRole} title="Click to switch between Admin and Team views">
-          <span className={`${styles.roleIndicator} ${role === 'team' ? styles.roleIndicatorTeam : ''}`} />
-          <span>Role: {role === 'team' ? 'Team' : 'Admin'}</span>
-        </button>
         <button className={styles.iconBtn} aria-label="Announcements">
           <Megaphone size={18} />
         </button>
@@ -90,6 +72,16 @@ function Topbar({ onToggleSidebar }) {
               <button className={styles.dropdownItem} onClick={handleLogout}>
                 <LogOut size={15} />
                 Sign Out
+              </button>
+              <button
+                className={styles.dropdownItem}
+                onClick={() => {
+                  setOpen(false);
+                  navigate('/subscription');
+                }}
+              >
+                <CreditCard size={15} />
+                Subscription
               </button>
             </div>
           )}

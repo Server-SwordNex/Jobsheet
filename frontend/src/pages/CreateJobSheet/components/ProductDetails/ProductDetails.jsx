@@ -11,7 +11,17 @@ function ProductDetails({ form, handleChange, technicians = [] }) {
         </div>
         <div className={styles.field}>
           <label className={styles.label}>Mobile</label>
-          <input className={styles.input} name="mobile" type="tel" placeholder="Enter mobile number" value={form.mobile} onChange={handleChange} />
+          <input
+            className={styles.input}
+            name="mobile"
+            type="text"
+            inputMode="numeric"
+            placeholder="Enter mobile number"
+            value={form.mobile || ''}
+            onChange={handleChange}
+            autoComplete="off"
+            data-lpignore="true"
+          />
         </div>
       </div>
       <div className={styles.row}>

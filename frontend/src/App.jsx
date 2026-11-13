@@ -17,6 +17,7 @@ import Technicians from "./pages/Technicians/Technicians.jsx"
 import Reports from './pages/Reports/Reports.jsx'
 import Calendar from './pages/Calendar/Calendar.jsx'
 import SettingsPage from './pages/Settings/SettingsPage.jsx'
+import SubscriptionPage from './pages/SubscriptionPage/SubscriptionPage.jsx'
 import Layout from "./components/Layout/Layout.jsx"
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute.jsx'
 import SuperAdminRoute from './components/SuperAdminRoute/SuperAdminRoute.jsx'
@@ -62,6 +63,9 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/google-register" element={<GoogleRegisterPage />} />
       <Route path="/superadmin/login" element={<SuperAdminLogin />} />
+      <Route path="/admin/login" element={<Navigate to="/superadmin/login" replace />} />
+      <Route path="/admin" element={<Navigate to="/superadmin/dashboard" replace />} />
+      <Route path="/admin/*" element={<Navigate to="/superadmin/dashboard" replace />} />
       <Route element={<ProtectedRoute />}>
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<Dashboard />} />
@@ -73,6 +77,7 @@ function App() {
         <Route path="/technicians" element={<Technicians />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
       </Route>
       </Route>
       <Route path="/superadmin" element={<SuperAdminRoute />}>

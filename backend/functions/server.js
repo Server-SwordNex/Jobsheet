@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import subscriptionReminderCron from './cronJobs/subscriptionReminderCron.js';
 import superAdminLoginRoute from './routes/superAdminLoginRoute.js';
 import pricingPlanRoute from './routes/pricingPlanRoute.js';
@@ -41,8 +43,12 @@ const corsOptions = {
   maxAge: 86400,
 };
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(superAdminLoginRoute);
 app.use(pricingPlanRoute);
 app.use(userRegistrationRoute);

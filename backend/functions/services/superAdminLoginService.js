@@ -1,13 +1,27 @@
 import jwt from 'jsonwebtoken';
 import { config } from "../config/envConfig.js";
 
-export function validateSuperAdmin(email, password) {
-  console.log('Validating super admin credentials');
-  if (email !== config.superadminEmail || password !== config.superadminPassword) {
-    const error = new Error('Invalid email or password');
-    error.status = 401;
+export async function validateSuperAdmin(email, password) {
+  const cleanEmail = (email || '').trim().toLowerCase();
+  const cleanConfigEmail = (config.superadminEmail || '').trim().toLowerCase();
+  const cleanPassword = (password || '').trim();
+  const cleanConfigPassword = (config.superadminPassword || '').trim();
+
+  if (!cleanConfigEmail || !cleanConfigPassword) {
+    const error = new Error('SUPERADMIN credentials are not properly configured');
+    error.status = 500;
     throw error;
   }
+
+  // 1. Check if credentials match configured Admin
+  if (cleanEmail === cleanConfigEmail && cleanPassword === cleanConfigPassword) {
+    return true;
+  }
+
+  // 2. Reject all other attempts with standard error
+  const error = new Error("Invalid email or password");
+  error.status = 401;
+  throw error;
 }
 
 export function generateToken(payload) {

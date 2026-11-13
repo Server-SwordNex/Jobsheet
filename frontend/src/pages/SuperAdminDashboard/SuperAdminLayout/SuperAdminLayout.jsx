@@ -1,4 +1,4 @@
-import { useNavigate, NavLink, Outlet } from 'react-router-dom';
+import { useNavigate, NavLink, Outlet, Link } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
 import { removeItem, getItem } from '../../../utils/storage';
 import iconLogo from '../../../assets/jobsheet-icon.png';
@@ -24,10 +24,10 @@ function SuperAdminLayout() {
   return (
     <div className={styles.layout}>
       <header className={styles.topbar}>
-        <div className={styles.topbarLeft}>
+        <Link to="/superadmin/dashboard" className={styles.topbarLeft} aria-label="Go to Super Admin Dashboard">
           <img src={iconLogo} alt="SwordNex" className={styles.logoImg} />
           <span className={styles.logoText}>SwordNex</span>
-        </div>
+        </Link>
         <div className={styles.topbarRight}>
           <div className={styles.userInfo}>
             <div className={styles.avatar}>
